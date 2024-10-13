@@ -52,6 +52,12 @@ final class SnappyStorage<T: Storable> {
     }
     
     // MARK: Save/Load
+    
+    // TODO: Manage iCloud save/fetch vs Local save/fetch
+    // TODO: Add Encrypt/Decrypt step
+    // TODO: Add Mock object
+    // TODO: Add ability to save files, images, and videos
+    // TODO: Testing!!!
 
     func load() async throws -> T {
         guard let fileURL = localURL else { throw SnappyError.fileNotFound }
