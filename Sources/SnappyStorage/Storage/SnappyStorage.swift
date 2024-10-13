@@ -107,4 +107,41 @@ final class SnappyStorage<T: Storable> {
             }
         }
     }
+    
+    enum BackupFreqency {
+        case never
+        case instant
+        case daily
+        case weekly
+        case monthly
+        case yearly
+    }
+    
+    private var lastBackupDate: Date?
+    
+    private var today: Date { Calendar.current.startOfDay(for: Date()) }
+    
+    private var backupFreqency: BackupFreqency = .daily
+    
+    func nextBackupDate(for frequency: BackupFreqency) -> Date? {
+        let referenceDate = (lastBackupDate ?? today).startOfDay
+        var nextBackupDate: Date? = {
+            switch frequency {
+            case .never: return nil
+            case .instant: return Calendar.current.startOfDay(for: referenceDate)
+            case .daily: return Calendar.current.date(byAdding: .day, value: 1, to: referenceDate)
+            case .weekly: return Calendar.current.date(byAdding: .weekOfYear, value: 1, to: referenceDate)
+            case .monthly: return Calendar.current.date(byAdding: .month, value: 1, to: referenceDate)
+            case .yearly: return Calendar.current.date(byAdding: .year, value: 1, to: referenceDate)
+            }
+        }()
+        guard let nextBackupDate else { return nil }
+        guard nextBackupDate.isInFuture else { return today }
+        return nextBackupDate
+    }
+    
+    var shouldBackup: Bool {
+        guard backupFreqency != .never else { return false }
+        return nextBackupDate(for: backupFreqency) == today
+    }
 }

@@ -32,3 +32,15 @@ extension String {
         }
     }
 }
+
+// MARK: Date Extensions
+
+extension Date {
+    var startOfDay: Date {
+        Calendar.current.startOfDay(for: self)
+    }
+    
+    var isInFuture: Bool {
+        self.startOfDay >= Date().startOfDay
+    }
+}
