@@ -9,22 +9,24 @@ import Foundation
 import Security
 
 final class SnappyKeychain {
-
-    var aesLocalKey: String {
-        get throws {
-            return try fetch(Keys.aesLocalKey)
-        }
-    }
-    
-    var aesLocalIV: String {
-        get throws {
-            return try fetch(Keys.aesLocalIV)
-        }
-    }
     
     var aesLocalPair: (key: String, iv: String)? {
         get throws {
             try (aesLocalKey, aesLocalIV)
+        }
+    }
+    
+    // MARK: Private properties
+
+    private var aesLocalKey: String {
+        get throws {
+            return try fetchAsStringValue(Keys.aesLocalKey)
+        }
+    }
+    
+    private var aesLocalIV: String {
+        get throws {
+            return try fetchAsStringValue(Keys.aesLocalIV)
         }
     }
     
@@ -45,8 +47,8 @@ final class SnappyKeychain {
     }
     
     // fetch keychain item as String
-    func fetch(_ key: String) throws -> String {
-        try fetchAsData(key).stringValue
+    func fetchAsStringValue(_ key: String) throws -> String {
+        try fetch(key).stringValue
     }
     
     // delete keychain item
@@ -116,7 +118,7 @@ final class SnappyKeychain {
     }
     
     // fetch keychain item as Data
-    private func fetchAsData(_ key: String) throws -> Data {
+    private func fetch(_ key: String) throws -> Data {
         var result: AnyObject?
         let status = SecItemCopyMatching([
             kSecClass: kSecClassGenericPassword,

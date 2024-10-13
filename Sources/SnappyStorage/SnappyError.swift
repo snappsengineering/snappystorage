@@ -9,4 +9,6 @@ enum SnappyError: Error {
     case conversionError
     case fileNotFound
     case keychainError
+    case invalidOperationError
+    case emptyDataError
 }

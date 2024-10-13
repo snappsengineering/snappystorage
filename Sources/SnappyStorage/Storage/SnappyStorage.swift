@@ -8,9 +8,6 @@
 import CommonCrypto
 import Foundation
 
-// MARK: - Storable Protocol
-protocol Storable: Equatable & Codable {}
-
 final class SnappyStorage<T: Storable> {
     
     // MARK: File Name
@@ -39,16 +36,11 @@ final class SnappyStorage<T: Storable> {
         return fileURL
     }
     
-    var backupURL: URL? {
-        guard let backupURL = fileManager.url(forUbiquityContainerIdentifier: nil) else { return nil }
-        let documentsURL = backupURL.appendingPathComponent(Folder.documents.rawValue)
+    var cloudURL: URL? {
+        guard let cloudURL = fileManager.url(forUbiquityContainerIdentifier: nil) else { return nil }
+        let documentsURL = cloudURL.appendingPathComponent(Folder.documents.rawValue)
         let fileURL = documentsURL.appendingPathComponent(fileName)
         return fileURL
-    }
-
-    private func createDirectoryIfNotExist(at url: URL) async throws {
-        guard !fileManager.fileExists(atPath: url.path) else { return }
-        return try fileManager.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
     }
     
     // MARK: Save/Load
@@ -58,17 +50,48 @@ final class SnappyStorage<T: Storable> {
     // TODO: Add Mock object
     // TODO: Add ability to save files, images, and videos
     // TODO: Testing!!!
-
-    func load() async throws -> T {
-        guard let fileURL = localURL else { throw SnappyError.fileNotFound }
-        guard fileManager.fileExists(atPath: fileURL.path) else { throw SnappyError.fileNotFound }
-        return try decoder.decode(T.self, from: Data(contentsOf: fileURL))
+    
+    func fetch() async throws -> [T] {
+        let localResults = try await load(url: localURL)
+        if localResults.isEmpty {
+            let cloudResults = try await load(url: cloudURL)
+            guard !cloudResults.isEmpty else { throw SnappyError.emptyDataError }
+            return cloudResults
+        }
+        return localResults
     }
     
-    func save(element: T) async throws {
-        guard let fileURL = backupURL else { throw SnappyError.fileNotFound }
+    func update(from: URL?, to: URL?) async throws {
+        let fromElements = try await load(url: from)
+        let toElements = try await load(url: to)
+        
+        try await save(collection: toElements, url: from)
+    }
+    
+    // MARK: Private
+    
+    private func load(url: URL?) async throws -> [T] {
+        guard let fileURL = url else { throw SnappyError.fileNotFound }
+        guard fileManager.fileExists(atPath: fileURL.path) else { throw SnappyError.fileNotFound }
+        let results = try decoder.decode([T].self, from: Data(contentsOf: fileURL))
+        return results
+    }
+    
+    private func save(element: T, url: URL?) async throws {
+        guard let fileURL = url else { throw SnappyError.fileNotFound }
         try await createDirectoryIfNotExist(at: fileURL.deletingLastPathComponent())
         try encoder.encode(element).write(to: fileURL)
+    }
+    
+    private func save(collection: [T], url: URL?) async throws {
+        guard let fileURL = url else { throw SnappyError.fileNotFound }
+        try await createDirectoryIfNotExist(at: fileURL.deletingLastPathComponent())
+        try encoder.encode(collection).write(to: fileURL, options: .atomic)
+    }
+
+    private func createDirectoryIfNotExist(at url: URL) async throws {
+        guard !fileManager.fileExists(atPath: url.path) else { throw SnappyError.invalidOperationError }
+        return try fileManager.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
     }
     
     // MARK: Constants
