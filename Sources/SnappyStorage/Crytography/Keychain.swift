@@ -1,5 +1,5 @@
 //
-//  SnappyKeychain.swift
+//  Keychain.swift
 //  SnappyStorage
 //
 //  Created by Shane Noormohamed on 2024-10-12.
@@ -8,7 +8,7 @@
 import Foundation
 import Security
 
-final class SnappyKeychain {
+final class Keychain {
     
     var aesLocalPair: (key: String, iv: String)? {
         get throws {

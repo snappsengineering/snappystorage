@@ -1,5 +1,5 @@
 //
-//  AESCrypt.swift
+//  AES.swift
 //
 //  Created by Shane Noormohamed.
 //  Copyright © 2024 snapps engineering ltd. All rights reserved.
@@ -8,7 +8,7 @@
 import CommonCrypto
 import Foundation
 
-final class AESCrypt {
+final class AES {
     
     // MARK: Public Functions
 

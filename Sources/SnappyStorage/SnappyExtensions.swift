@@ -43,4 +43,8 @@ extension Date {
     var isInFuture: Bool {
         self.startOfDay >= Date().startOfDay
     }
+    
+    static var today: Date {
+        Date().startOfDay
+    }
 }

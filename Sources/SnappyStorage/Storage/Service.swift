@@ -7,7 +7,7 @@
 
 import Foundation
 
-protocol SnappyServiceProtocol {
+protocol ServiceProtocol {
     associatedtype T
     
     var storedObjects: [T] { get set }
@@ -19,15 +19,20 @@ protocol SnappyServiceProtocol {
     func delete(_ objectToDelete: T)
 }
 
-class SnappyService<T: StoredObject>: SnappyServiceProtocol {
+class Service<T: StoredObject>: ServiceProtocol {
     
-    private var storage: SnappyStorage<T>
-    var storedObjects: [T]
+    private var storage: Storage<T>
+    var storedObjects: [T] = []
     
-    init(storage: SnappyStorage<T>) async {
+    init(storage: Storage<T>) {
         self.storage = storage
     }
-    
+
+    // load asynchronously from storage
+    func load() async throws {
+        storedObjects = try await storage.fetch()
+    }
+
     func fetchCollection() -> [T] {
         return storedObjects
     }
@@ -38,12 +43,10 @@ class SnappyService<T: StoredObject>: SnappyServiceProtocol {
     
     func save(_ objectToSave: T) {
         saveAndReplaceIfNeeded(objectToSave)
-        update()
     }
     
     func save(_ objectsToSave: [T]) {
         objectsToSave.forEach { saveAndReplaceIfNeeded($0) }
-        update()
     }
     
     private func saveAndReplaceIfNeeded(_ objectToSave: T) {
@@ -56,14 +59,5 @@ class SnappyService<T: StoredObject>: SnappyServiceProtocol {
     
     func delete(_ objectToDelete: T) {
         storedObjects.removeAll(where: { $0 == objectToDelete })
-        update()
-    }
-    
-    private func update() {
-        DispatchQueue.main.async { [weak self] in
-            guard let self else { return }
-            self.storage.sav(collection: self.storedObjects)
-            self.storedObjects = self.localStorageService.fetch()
-        }
     }
  }

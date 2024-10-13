@@ -7,7 +7,7 @@
 
 import Foundation
 
-protocol Storable: ObservableObject, Equatable, Codable {
+protocol Storable: Equatable, Codable {
     var attributes: [String: Any] { get set }
 }
 

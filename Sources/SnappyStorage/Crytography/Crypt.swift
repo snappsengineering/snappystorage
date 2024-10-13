@@ -1,5 +1,5 @@
 //
-//  SnappyCrypt.swift
+//  Crypt.swift
 //  Akira
 //
 //  Created by Shane Noormohamed on 2023-05-02.
@@ -8,13 +8,13 @@
 
 import Foundation
 
-final class SnappyCrypt {
-    private let aesCrypt = AESCrypt()
-    private let keyChain: SnappyKeychain
+final class Crypt {
+    private let aesCrypt = AES()
+    private let keyChain: Keychain
     
     // MARK: Initialization
 
-    init(keyChain: SnappyKeychain) {
+    init(keyChain: Keychain) {
         self.keyChain = keyChain
     }
     
