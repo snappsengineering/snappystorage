@@ -29,7 +29,6 @@ class Storage<T: Storable> {
     // MARK: Save/Load
     
     // TODO: Manage iCloud save/fetch vs Local save/fetch
-    // TODO: Add Encrypt/Decrypt step
     // TODO: Add Mock object
     // TODO: Add ability to save files, images, and videos
     // TODO: Testing!!!
@@ -37,7 +36,8 @@ class Storage<T: Storable> {
     func load() async throws -> [T] {
         guard let url = location.url else { throw SnappyError.fileNotFound }
         guard fileManager.fileExists(atPath: url.path) else { throw SnappyError.fileNotFound }
-        let results = try decoder.decode([T].self, from: Data(contentsOf: url))
+        let decryptedResults = try crypt.decrypt(data: Data(contentsOf: url))
+        let results = try decoder.decode([T].self, from: decryptedResults)
         guard !results.isEmpty else { throw SnappyError.emptyDataError }
         return results
     }
@@ -48,7 +48,9 @@ class Storage<T: Storable> {
             try await createDirectoryIfNotExist()
             return
         }
-        try encoder.encode(element).write(to: url, options: .atomic)
+        let encodedElement = try encoder.encode(element)
+        let encryptedElement = try crypt.encrypt(data: encodedElement)
+        try encodedElement.write(to: url, options: .atomic)
     }
     
     func save(collection: [T]) async throws {
