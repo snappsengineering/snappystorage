@@ -11,22 +11,11 @@ import Foundation
 
 public protocol Storable: Equatable, Codable {
     var objectID: String { get }
-    var updatedAt: Date { get }
 }
 
-// MARK: - SavedEntity Struct
+// MARK: - Extension
 
-public struct SavedEntity: Storable  {
-    
-    // MARK: Private properties
-    
-    public var objectID: String
-    public var updatedAt: Date
-    
-    // MARK: init
-    
-    init() {
-        objectID = UUID().uuidString
-        updatedAt = Date()
+    var objectID: String {
+        UUID().uuidString
     }
 }
