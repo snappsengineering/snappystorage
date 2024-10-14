@@ -14,9 +14,9 @@ public protocol Storable: Equatable, Codable {
     var updatedAt: Date { get }
 }
 
-// MARK: - StoredObject Struct
+// MARK: - SavedEntity Struct
 
-public struct StoredObject: Storable  {
+public struct SavedEntity: Storable  {
     
     // MARK: Private properties
     
