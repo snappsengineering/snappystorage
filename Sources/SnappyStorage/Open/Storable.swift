@@ -15,7 +15,7 @@ public protocol Storable: Equatable, Codable {
 
 // MARK: - Extension
 
-extension Storable  {
+public extension Storable  {
     var objectID: String {
         UUID().uuidString
     }
