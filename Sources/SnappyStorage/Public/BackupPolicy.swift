@@ -19,8 +19,8 @@ public struct BackupPolicy {
     
     // MARK: init
     
-    public init(fequency: Frequency) {
-        self.frequency = fequency
+    public init(frequency: Frequency) {
+        self.frequency = frequency
     }
     
     // MARK: Internal functions
