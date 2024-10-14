@@ -13,9 +13,15 @@ public struct BackupPolicy {
     
     private let calendar: Calendar = .current
     
-    // MARK: Public properties
+    // MARK: Internal properties
 
-    public var frequency: Frequency = .daily
+    internal var frequency: Frequency
+    
+    // MARK: init
+    
+    public init(fequency: Frequency) {
+        self.frequency = fequency
+    }
     
     // MARK: Internal functions
     
