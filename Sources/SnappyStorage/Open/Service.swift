@@ -1,8 +1,8 @@
 //
 //  Service.swift
-//  retoxifier (iOS)
 //
-//  Created by Shane Noormohamed on 12/25/23.
+//  Created by Shane Noormohamed.
+//  Copyright © 2024 snapps engineering ltd. All rights reserved.
 //
 
 import Foundation

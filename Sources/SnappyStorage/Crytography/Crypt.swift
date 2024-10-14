@@ -1,9 +1,8 @@
 //
 //  Crypt.swift
-//  Akira
 //
-//  Created by Shane Noormohamed on 2023-05-02.
-//  Copyright © 2023 TELUS Health Virtual Care. All rights reserved.
+//  Created by Shane Noormohamed.
+//  Copyright © 2024 snapps engineering ltd. All rights reserved.
 //
 
 import Foundation
