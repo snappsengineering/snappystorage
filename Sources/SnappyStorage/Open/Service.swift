@@ -19,7 +19,7 @@ public protocol ServiceProtocol {
     func delete(_ object: T)  async throws
 }
 
-public class Service<T: StoredObject>: ServiceProtocol {
+open class Service<T: StoredObject>: ServiceProtocol {
     
     // MARK: Private Properties
     

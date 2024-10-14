@@ -13,7 +13,7 @@ public protocol Storable: Equatable, Codable {
     var attributes: [String: Any] { get set }
 }
 
-public class StoredObject: Storable  {
+open class StoredObject: Storable  {
     
     // MARK: Public properties
     
