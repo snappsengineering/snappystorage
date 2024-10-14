@@ -1,8 +1,8 @@
 //
 //  Storable.swift
-//  retoxifier (iOS)
 //
-//  Created by Shane Noormohamed on 12/22/23.
+//  Created by Shane Noormohamed.
+//  Copyright © 2024 snapps engineering ltd. All rights reserved.
 //
 
 import Foundation
@@ -15,6 +15,7 @@ public protocol Storable: Equatable, Codable {
 
 // MARK: - Extension
 
+extension Storable  {
     var objectID: String {
         UUID().uuidString
     }
