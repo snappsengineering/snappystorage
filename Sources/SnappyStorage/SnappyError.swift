@@ -11,4 +11,5 @@ enum SnappyError: Error {
     case keychainError
     case invalidOperationError
     case emptyDataError
+    case dataNotFound
 }

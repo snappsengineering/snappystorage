@@ -34,35 +34,24 @@ class Storage<T: Storable> {
     // TODO: Add ability to save files, images, and videos
     // TODO: Testing!!!
     
-    func fetch() async throws -> [T] {
-        let localResults = try await load()
-        if localResults.isEmpty {
-            let cloudResults = try await load()
-            guard !cloudResults.isEmpty else { throw SnappyError.emptyDataError }
-            return cloudResults
-        }
-        return localResults
-    }
-    
-    // MARK: Private
-    
-    private func load() async throws -> [T] {
+    func load() async throws -> [T] {
         guard let url = location.url else { throw SnappyError.fileNotFound }
         guard fileManager.fileExists(atPath: url.path) else { throw SnappyError.fileNotFound }
         let results = try decoder.decode([T].self, from: Data(contentsOf: url))
+        guard !results.isEmpty else { throw SnappyError.emptyDataError }
         return results
     }
     
-    private func save(element: T) async throws {
+    func save(element: T) async throws {
         guard let url = location.url else { throw SnappyError.fileNotFound }
         guard fileManager.fileExists(atPath: url.path) else {
             try await createDirectoryIfNotExist()
             return
         }
-        try encoder.encode(element).write(to: url)
+        try encoder.encode(element).write(to: url, options: .atomic)
     }
     
-    private func save(collection: [T]) async throws {
+    func save(collection: [T]) async throws {
         guard let url = location.url else { throw SnappyError.fileNotFound }
         guard fileManager.fileExists(atPath: url.path) else {
             try await createDirectoryIfNotExist()
@@ -70,6 +59,8 @@ class Storage<T: Storable> {
         }
         try encoder.encode(collection).write(to: url, options: .atomic)
     }
+    
+    // MARK: Private
 
     private func createDirectoryIfNotExist() async throws {
         guard let url = location.url,

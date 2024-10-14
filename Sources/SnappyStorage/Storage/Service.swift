@@ -10,19 +10,17 @@ import Foundation
 protocol ServiceProtocol {
     associatedtype T
     
-    var storedObjects: [T] { get set }
-    
-    func fetchCollection() -> [T]
-    func fetch(with fetchID: String) -> T?
-    func save(_ objectToSave: T)
-    func save(_ objectsToSave: [T])
-    func delete(_ objectToDelete: T)
+    func load() async throws
+    func fetch(with fetchID: String) async throws -> T
+    func save(_ object: T) async throws
+    func save(_ objects: [T]) async throws
+    func delete(_ object: T)  async throws
 }
 
 class Service<T: StoredObject>: ServiceProtocol {
     
     private var storage: Storage<T>
-    var storedObjects: [T] = []
+    private var storedObjects: [T] = []
     
     init(storage: Storage<T>) {
         self.storage = storage
@@ -30,34 +28,41 @@ class Service<T: StoredObject>: ServiceProtocol {
 
     // load asynchronously from storage
     func load() async throws {
-        storedObjects = try await storage.fetch()
-    }
-
-    func fetchCollection() -> [T] {
-        return storedObjects
+        storedObjects = try await storage.load()
     }
     
-    func fetch(with fetchID: String) -> T? {
-        return storedObjects.filter { $0.objectID == fetchID }.first
+    func fetch(with fetchID: String) async throws -> T {
+        try await load()
+        guard let item = storedObjects.filter({ $0.objectID == fetchID }).first else { throw SnappyError.dataNotFound }
+        return item
     }
     
-    func save(_ objectToSave: T) {
-        saveAndReplaceIfNeeded(objectToSave)
+    func save(_ object: T) async throws {
+        updateStorage(with: object)
+        try await commit()
     }
     
-    func save(_ objectsToSave: [T]) {
-        objectsToSave.forEach { saveAndReplaceIfNeeded($0) }
-    }
-    
-    private func saveAndReplaceIfNeeded(_ objectToSave: T) {
-        if let index = storedObjects.firstIndex(where: { $0 == objectToSave }) {
-            storedObjects[index] = objectToSave
-        } else {
-            storedObjects.append(objectToSave)
+    func save(_ objects: [T]) async throws {
+        for object in objects {
+            updateStorage(with: object)
         }
+        try await commit()
     }
     
-    func delete(_ objectToDelete: T) {
-        storedObjects.removeAll(where: { $0 == objectToDelete })
+    func delete(_ object: T) async throws {
+        storedObjects.removeAll(where: { $0 == object })
+        try await commit()
+    }
+    
+    func commit() async throws {
+        try await storage.save(collection: storedObjects)
+    }
+    
+    private func updateStorage(with object: T) {
+        if let index = storedObjects.firstIndex(where: { $0 == object }) {
+            storedObjects[index] = object
+        } else {
+            storedObjects.append(object)
+        }
     }
  }

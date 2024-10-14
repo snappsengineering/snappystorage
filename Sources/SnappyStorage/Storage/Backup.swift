@@ -23,10 +23,10 @@ struct Backup {
    
     func nextBackup(date: Frequency) -> Date? {
         let referenceDate = (lastBackupDate ?? Date.today).startOfDay
-        var nextBackupDate: Date? = {
+        let nextBackupDate: Date? = {
             switch frequency {
             case .never: return nil
-            case .instant: return Calendar.current.startOfDay(for: referenceDate)
+            case .instant: return Calendar.current.startOfDay(for: Date.today)
             case .daily: return Calendar.current.date(byAdding: .day, value: 1, to: referenceDate)
             case .weekly: return Calendar.current.date(byAdding: .weekOfYear, value: 1, to: referenceDate)
             case .monthly: return Calendar.current.date(byAdding: .month, value: 1, to: referenceDate)
