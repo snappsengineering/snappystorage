@@ -35,9 +35,9 @@ final class Location<T: Storable> {
     
     // MARK: init
     
-    init(fileManager: FileManager, destination: Destination) {
-        self.fileManager = fileManager
+    init(destination: Destination, fileManager: FileManager) {
         self.destination = destination
+        self.fileManager = fileManager
         self.url = makeURL(for: destination)
     }
     

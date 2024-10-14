@@ -12,15 +12,16 @@ final class Crypt {
     
     // MARK: Private Properties
     
-    private let aesCrypt = AES()
-    private let keyChain: Keychain
+    private let aesCrypt: AES
     private let isEnabled: Bool
+    private let keyChain: Keychain
     
     // MARK: Initialization
 
-    init(keyChain: Keychain, isEnabled: Bool) {
-        self.keyChain = keyChain
+    init(isEnabled: Bool, aesCrypt: AES = AES(), keyChain: Keychain = Keychain()) {
+        self.aesCrypt = aesCrypt
         self.isEnabled = isEnabled
+        self.keyChain = keyChain
     }
     
     // MARK: Public

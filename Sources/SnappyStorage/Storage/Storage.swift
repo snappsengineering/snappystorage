@@ -22,7 +22,7 @@ final class Storage<T: Storable> {
     
     // MARK: init
     
-    init(location: Location<T>, crypt: Crypt, decoder: JSONDecoder, encoder: JSONEncoder) {
+    init(crypt: Crypt, location: Location<T>, decoder: JSONDecoder = JSONDecoder(), encoder: JSONEncoder = JSONEncoder()) {
         self.location = location
         self.crypt = crypt
         self.decoder = decoder

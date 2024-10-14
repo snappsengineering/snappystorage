@@ -7,7 +7,7 @@
 
 // MARK: Errors Enum
 
-enum SnappyError: Error {
+public enum SnappyError: Error {
     case conversionError
     case fileNotFound
     case keychainError

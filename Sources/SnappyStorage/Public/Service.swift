@@ -9,79 +9,87 @@ import Foundation
 
 // MARK: - Protocol
 
-protocol ServiceProtocol {
+public protocol ServiceProtocol {
     associatedtype T
     
-    func load() async throws
+    func load() async throws -> [T]
     func fetch(with fetchID: String) async throws -> T
     func save(_ object: T) async throws
     func save(_ objects: [T]) async throws
     func delete(_ object: T)  async throws
 }
 
-class Service<T: StoredObject>: ServiceProtocol {
+public class Service<T: StoredObject>: ServiceProtocol {
     
     // MARK: Private Properties
     
-    private var local: Storage<T>
+    private var local: Storage<T>?
     private var backup: Storage<T>?
     private var backupPolicy: BackupPolicy
     private var storedObjects: [T] = []
     
     // MARK: init
     
-    init(backupPolicy: BackupPolicy, fileManager: FileManager, crypt: Crypt, decoder: JSONDecoder, encoder: JSONEncoder) {
-        
-        let location = Location<T>(fileManager: fileManager, destination: .local)
-        self.local = Storage(location: location, crypt: crypt, decoder: decoder, encoder: encoder)
+    public init(backupPolicy: BackupPolicy, encryptionEnabled: Bool) {
         
         self.backupPolicy = backupPolicy
+        let crypt = Crypt.init(isEnabled: encryptionEnabled)
+        
+        self.setStorage(backupPolicy: backupPolicy, crypt: crypt)
+    }
+    
+    func setStorage(backupPolicy: BackupPolicy, crypt: Crypt) {
+        
+        let fileManager = FileManager.default
+        
+        let location = Location<T>(destination: .local, fileManager: fileManager)
+        self.local = Storage(crypt: crypt, location: location)
         
         guard backupPolicy.frequency != .never else { return }
         
-        let backupLocation = Location<T>(fileManager: fileManager, destination: .cloud)
-        self.backup = Storage(location: backupLocation, crypt: crypt, decoder: decoder, encoder: encoder)
+        let backupLocation = Location<T>(destination: .cloud, fileManager: fileManager)
+        self.backup = Storage(crypt: crypt, location: backupLocation)
     }
     
     // MARK: Local DB Operations
 
-    func load() async throws {
-        storedObjects = try await local.load()
+    public func load() async throws -> [T] {
+        try await pull()
+        return storedObjects
     }
     
-    func fetch(with fetchID: String) async throws -> T {
-        try await load()
+    public func fetch(with fetchID: String) async throws -> T {
         guard let item = storedObjects.filter({ $0.objectID == fetchID }).first else { throw SnappyError.dataNotFound }
         return item
     }
     
-    func save(_ object: T) async throws {
+    public func save(_ object: T) async throws {
         updateStorage(with: object)
         try await commit()
     }
     
-    func save(_ objects: [T]) async throws {
+    public func save(_ objects: [T]) async throws {
         objects.forEach {
             updateStorage(with: $0)
         }
         try await commit()
     }
     
-    func delete(_ object: T) async throws {
+    public func delete(_ object: T) async throws {
         storedObjects.removeAll(where: { $0 == object })
         try await commit()
     }
     
     // MARK: iCloud Backup
     
-    func restore() async throws {
+    public func restore() async throws {
         guard backupPolicy.frequency != .never,
         let backup else { throw SnappyError.invalidOperationError }
         storedObjects = try await backup.load()
         try await commit()
     }
     
-    func backup() async throws {
+    public func backup() async throws {
         guard backupPolicy.frequency != .never,
         let backup else { throw SnappyError.invalidOperationError }
         guard let lastBackup = try backup.location.lastUpdated else { return }
@@ -91,8 +99,13 @@ class Service<T: StoredObject>: ServiceProtocol {
 
     // MARK: Private
     
+    private func pull() async throws {
+        guard let fetchedObjects = try await local?.load() else { throw SnappyError.emptyDataError }
+        storedObjects = fetchedObjects
+    }
+    
     private func commit() async throws {
-        try await local.save(collection: storedObjects)
+        try await local?.save(collection: storedObjects)
     }
     
     private func commitBackup() async throws {

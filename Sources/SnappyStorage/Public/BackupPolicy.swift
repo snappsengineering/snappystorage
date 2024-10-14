@@ -7,7 +7,7 @@
 
 import Foundation
 
-struct BackupPolicy {
+public struct BackupPolicy {
     
     // MARK: Private properties
     
@@ -15,11 +15,11 @@ struct BackupPolicy {
     
     // MARK: Public properties
 
-    var frequency: Frequency = .daily
+    public var frequency: Frequency = .daily
     
-    // MARK: Public functions
+    // MARK: Internal functions
     
-    func shouldBackup(lastBackup: Date) -> Bool {
+    internal func shouldBackup(lastBackup: Date) -> Bool {
         guard frequency != .never else { return false }
         return nextBackup(lastBackup: lastBackup) != nil
     }
@@ -45,7 +45,7 @@ struct BackupPolicy {
     
     // MARK: Enum
     
-    enum Frequency {
+    public enum Frequency {
         case never
         case instant
         case daily
