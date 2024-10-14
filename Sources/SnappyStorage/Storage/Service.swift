@@ -1,11 +1,13 @@
 //
-//  StoredObjectService.swift
+//  Service.swift
 //  retoxifier (iOS)
 //
 //  Created by Shane Noormohamed on 12/25/23.
 //
 
 import Foundation
+
+// MARK: - Protocol
 
 protocol ServiceProtocol {
     associatedtype T
@@ -19,22 +21,30 @@ protocol ServiceProtocol {
 
 class Service<T: StoredObject>: ServiceProtocol {
     
+    // MARK: Private Properties
+    
     private var local: Storage<T>
-    private var backup: Storage<T>
+    private var backup: Storage<T>?
     private var backupPolicy: BackupPolicy
     private var storedObjects: [T] = []
+    
+    // MARK: init
     
     init(backupPolicy: BackupPolicy, fileManager: FileManager, crypt: Crypt, decoder: JSONDecoder, encoder: JSONEncoder) {
         
         let location = Location<T>(fileManager: fileManager, destination: .local)
         self.local = Storage(location: location, crypt: crypt, decoder: decoder, encoder: encoder)
         
+        self.backupPolicy = backupPolicy
+        
+        guard backupPolicy.frequency != .never else { return }
+        
         let backupLocation = Location<T>(fileManager: fileManager, destination: .cloud)
         self.backup = Storage(location: backupLocation, crypt: crypt, decoder: decoder, encoder: encoder)
-        self.backupPolicy = backupPolicy
     }
+    
+    // MARK: Local DB Operations
 
-    // load asynchronously from storage
     func load() async throws {
         storedObjects = try await local.load()
     }
@@ -62,26 +72,34 @@ class Service<T: StoredObject>: ServiceProtocol {
         try await commit()
     }
     
-    func commit() async throws {
-        try await local.save(collection: storedObjects)
-    }
-    
-    func commitBackup() async throws {
-        try await backup.save(collection: storedObjects)
-    }
+    // MARK: iCloud Backup
     
     func restore() async throws {
+        guard backupPolicy.frequency != .never,
+        let backup else { throw SnappyError.invalidOperationError }
         storedObjects = try await backup.load()
         try await commit()
     }
     
     func backup() async throws {
+        guard backupPolicy.frequency != .never,
+        let backup else { throw SnappyError.invalidOperationError }
         guard let lastBackup = try backup.location.lastUpdated else { return }
         guard backupPolicy.shouldBackup(lastBackup: lastBackup) else { return }
         try await commitBackup()
     }
 
     // MARK: Private
+    
+    private func commit() async throws {
+        try await local.save(collection: storedObjects)
+    }
+    
+    private func commitBackup() async throws {
+        guard backupPolicy.frequency != .never,
+        let backup else { throw SnappyError.invalidOperationError }
+        try await backup.save(collection: storedObjects)
+    }
     
     private func updateStorage(with object: T) {
         if let index = storedObjects.firstIndex(where: { $0 == object }) {

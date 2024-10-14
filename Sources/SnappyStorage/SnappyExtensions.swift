@@ -7,7 +7,7 @@
 
 import Foundation
 
-// MARK: Data Extensions
+// MARK: - Data Extensions
 
 extension Data {
     var stringValue: String {
@@ -20,7 +20,7 @@ extension Data {
     }
 }
 
-// MARK: String Extensions
+// MARK: - String Extensions
 
 extension String {
     var dataValue: Data {
@@ -33,7 +33,7 @@ extension String {
     }
 }
 
-// MARK: Date Extensions
+// MARK: - Date Extensions
 
 extension Date {
     var startOfDay: Date {

@@ -9,18 +9,15 @@ import Foundation
 
 struct BackupPolicy {
     
-    enum Frequency {
-        case never
-        case instant
-        case daily
-        case weekly
-        case monthly
-        case yearly
-    }
+    // MARK: Private properties
+    
+    private let calendar: Calendar = .current
+    
+    // MARK: Public properties
 
     var frequency: Frequency = .daily
     
-    private let calendar: Calendar = .current
+    // MARK: Public functions
     
     func shouldBackup(lastBackup: Date) -> Bool {
         guard frequency != .never else { return false }
@@ -44,5 +41,16 @@ struct BackupPolicy {
         guard let nextBackupDate else { return nil }
         guard nextBackupDate.isInFuture else { return Date.today }
         return nextBackupDate
+    }
+    
+    // MARK: Enum
+    
+    enum Frequency {
+        case never
+        case instant
+        case daily
+        case weekly
+        case monthly
+        case yearly
     }
 }

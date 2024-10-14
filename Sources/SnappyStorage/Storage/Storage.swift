@@ -9,13 +9,18 @@ import CommonCrypto
 import Foundation
 
 final class Storage<T: Storable> {
+
+    // MARK: Public Properties
     
     var location: Location<T>
     
-    // MARK: Dependencies
+    // MARK: Private Properties
+
     private let crypt: Crypt
     private let decoder: JSONDecoder
     private let encoder: JSONEncoder
+    
+    // MARK: init
     
     init(location: Location<T>, crypt: Crypt, decoder: JSONDecoder, encoder: JSONEncoder) {
         self.location = location
@@ -29,6 +34,8 @@ final class Storage<T: Storable> {
     // TODO: Add Mock object
     // TODO: Add ability to save files, images, and videos
     // TODO: Testing!!!
+    
+    // MARK: Public functions
     
     func load() async throws -> [T] {
         guard let url = location.url else { throw SnappyError.fileNotFound }
@@ -58,7 +65,7 @@ final class Storage<T: Storable> {
         try await encryptedWrite(data: encodedCollection)
     }
     
-    // Private
+    // MARK: Private functions
     
     private func decryptedRead(data: Data) async throws -> Data {
         return try crypt.decrypt(data: data)

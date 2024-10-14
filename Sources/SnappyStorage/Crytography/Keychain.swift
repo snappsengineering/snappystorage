@@ -10,6 +10,8 @@ import Security
 
 final class Keychain {
     
+    // MARK: Computed Public Properties
+    
     var aesLocalPair: (key: String, iv: String)? {
         get throws {
             try (aesLocalKey, aesLocalIV)

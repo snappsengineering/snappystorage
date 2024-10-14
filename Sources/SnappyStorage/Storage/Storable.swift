@@ -7,12 +7,19 @@
 
 import Foundation
 
+// MARK: - Protocol
+
 protocol Storable: Equatable, Codable {
     var attributes: [String: Any] { get set }
 }
 
 class StoredObject: Storable  {
+    
+    // MARK: Public properties
+    
     var attributes: [String : Any] = [:]
+    
+    // MARK: init
     
     init() {
         objectID = UUID().uuidString
@@ -24,6 +31,8 @@ class StoredObject: Storable  {
         attributes = try JSONSerialization.jsonObject(with: data, options: []) as! [String: Any]
     }
 }
+
+// MARK: - Encodable
 
 extension StoredObject: Encodable {
     enum CodingKeys: String, CodingKey {
@@ -37,11 +46,15 @@ extension StoredObject: Encodable {
     }
 }
 
+// MARK: - Equatable
+
 extension StoredObject: Equatable {
     static func == (lhs: StoredObject, rhs: StoredObject) -> Bool{
         return lhs.objectID == rhs.objectID && lhs.updatedAt == rhs.updatedAt
     }
 }
+
+// MARK: - Attributes
 
 extension StoredObject {
     var objectID: String {
@@ -54,6 +67,8 @@ extension StoredObject {
         set { attributes[.updatedAt] = newValue }
     }
 }
+
+// MARK: - String Extension
 
 private extension String {
     static let objectID = "objectID"

@@ -8,11 +8,18 @@
 import Foundation
 
 final class Location<T: Storable> {
+    
+    // MARK: Private properties
+    
     private let fileManager: FileManager
     private let fileName: String = Folder.file.rawValue
 
+    // MARK: Public properties
+    
     let destination: Destination
     var url: URL?
+    
+    // MARK: Public computed properties
     
     var lastUpdated: Date? {
         get throws {
@@ -25,6 +32,8 @@ final class Location<T: Storable> {
         guard let path = url?.path else { return false }
         return fileManager.fileExists(atPath: path)
     }
+    
+    // MARK: init
     
     init(fileManager: FileManager, destination: Destination) {
         self.fileManager = fileManager
