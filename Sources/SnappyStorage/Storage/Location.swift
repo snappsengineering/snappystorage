@@ -7,23 +7,46 @@
 
 import Foundation
 
-struct Location<T: Storable> {
-
-    enum Destination {
-        case local
-        case cloud
-    }
-
+final class Location<T: Storable> {
     private let fileManager: FileManager
-    private let destination: Destination
-    
-    lazy var url: URL? = {
-       makeURL(for: destination)
-    }()
-    
-    // MARK: File Paths
-    
     private let fileName: String = Folder.file.rawValue
+
+    let destination: Destination
+    var url: URL?
+    
+    var lastUpdated: Date? {
+        get throws {
+            guard let path = url?.path else { return nil }
+            return try fileManager.attributesOfItem(atPath: path)[.modificationDate] as? Date
+        }
+    }
+    
+    var fileExists: Bool {
+        guard let path = url?.path else { return false }
+        return fileManager.fileExists(atPath: path)
+    }
+    
+    init(fileManager: FileManager, destination: Destination) {
+        self.fileManager = fileManager
+        self.destination = destination
+        self.url = makeURL(for: destination)
+    }
+    
+    // MARK: Public
+    
+    func createDirectoryIfNotExist() async throws {
+        guard let url = url,
+              !fileExists else { throw SnappyError.invalidOperationError }
+        try fileManager.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
+    }
+    
+    func removeDirectory() async throws {
+        guard let url = url,
+              !fileExists else { throw SnappyError.invalidOperationError }
+        try fileManager.removeItem(at: url)
+    }
+    
+    // MARK: Private
     
     private func makeURL(for destination: Destination) -> URL? {
         var locationURL: URL?
@@ -40,6 +63,13 @@ struct Location<T: Storable> {
         
         let fileURL = locationURL?.appendingPathComponent(fileName)
         return fileURL
+    }
+    
+    // MARK: Enums
+    
+    enum Destination {
+        case local
+        case cloud
     }
     
     enum Folder {

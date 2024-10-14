@@ -8,65 +8,65 @@
 import CommonCrypto
 import Foundation
 
-class Storage<T: Storable> {
+final class Storage<T: Storable> {
     
     var location: Location<T>
-
+    
     // MARK: Dependencies
     private let crypt: Crypt
     private let decoder: JSONDecoder
     private let encoder: JSONEncoder
-    private let fileManager: FileManager
     
-    init(location: Location<T>, crypt: Crypt, decoder: JSONDecoder, encoder: JSONEncoder, fileManager: FileManager) {
+    init(location: Location<T>, crypt: Crypt, decoder: JSONDecoder, encoder: JSONEncoder) {
         self.location = location
         self.crypt = crypt
         self.decoder = decoder
         self.encoder = encoder
-        self.fileManager = fileManager
     }
     
     // MARK: Save/Load
-    
-    // TODO: Manage iCloud save/fetch vs Local save/fetch
+
     // TODO: Add Mock object
     // TODO: Add ability to save files, images, and videos
     // TODO: Testing!!!
     
     func load() async throws -> [T] {
         guard let url = location.url else { throw SnappyError.fileNotFound }
-        guard fileManager.fileExists(atPath: url.path) else { throw SnappyError.fileNotFound }
-        let decryptedResults = try crypt.decrypt(data: Data(contentsOf: url))
+        guard location.fileExists else { throw SnappyError.fileNotFound }
+        let data = try Data(contentsOf: url)
+        let decryptedResults = try await decryptedRead(data: data)
         let results = try decoder.decode([T].self, from: decryptedResults)
         guard !results.isEmpty else { throw SnappyError.emptyDataError }
         return results
     }
     
     func save(element: T) async throws {
-        guard let url = location.url else { throw SnappyError.fileNotFound }
-        guard fileManager.fileExists(atPath: url.path) else {
-            try await createDirectoryIfNotExist()
+        guard location.fileExists else {
+            try await location.createDirectoryIfNotExist()
             return
         }
         let encodedElement = try encoder.encode(element)
-        let encryptedElement = try crypt.encrypt(data: encodedElement)
-        try encodedElement.write(to: url, options: .atomic)
+        try await encryptedWrite(data: encodedElement)
     }
     
     func save(collection: [T]) async throws {
-        guard let url = location.url else { throw SnappyError.fileNotFound }
-        guard fileManager.fileExists(atPath: url.path) else {
-            try await createDirectoryIfNotExist()
+        guard location.fileExists else {
+            try await location.createDirectoryIfNotExist()
             return
         }
-        try encoder.encode(collection).write(to: url, options: .atomic)
+        let encodedCollection = try encoder.encode(collection)
+        try await encryptedWrite(data: encodedCollection)
     }
     
-    // MARK: Private
-
-    private func createDirectoryIfNotExist() async throws {
-        guard let url = location.url,
-              !fileManager.fileExists(atPath: url.path) else { throw SnappyError.invalidOperationError }
-        return try fileManager.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
+    // Private
+    
+    private func decryptedRead(data: Data) async throws -> Data {
+        return try crypt.decrypt(data: data)
+    }
+    
+    private func encryptedWrite(data: Data) async throws {
+        guard let url = location.url else { throw SnappyError.fileNotFound }
+        let encryptedData = try crypt.encrypt(data: data)
+        try encryptedData.write(to: url, options: .atomic)
     }
 }

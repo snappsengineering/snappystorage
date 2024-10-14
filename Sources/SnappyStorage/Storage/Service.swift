@@ -19,16 +19,24 @@ protocol ServiceProtocol {
 
 class Service<T: StoredObject>: ServiceProtocol {
     
-    private var storage: Storage<T>
+    private var local: Storage<T>
+    private var backup: Storage<T>
+    private var backupPolicy: BackupPolicy
     private var storedObjects: [T] = []
     
-    init(storage: Storage<T>) {
-        self.storage = storage
+    init(backupPolicy: BackupPolicy, fileManager: FileManager, crypt: Crypt, decoder: JSONDecoder, encoder: JSONEncoder) {
+        
+        let location = Location<T>(fileManager: fileManager, destination: .local)
+        self.local = Storage(location: location, crypt: crypt, decoder: decoder, encoder: encoder)
+        
+        let backupLocation = Location<T>(fileManager: fileManager, destination: .cloud)
+        self.backup = Storage(location: backupLocation, crypt: crypt, decoder: decoder, encoder: encoder)
+        self.backupPolicy = backupPolicy
     }
 
     // load asynchronously from storage
     func load() async throws {
-        storedObjects = try await storage.load()
+        storedObjects = try await local.load()
     }
     
     func fetch(with fetchID: String) async throws -> T {
@@ -43,8 +51,8 @@ class Service<T: StoredObject>: ServiceProtocol {
     }
     
     func save(_ objects: [T]) async throws {
-        for object in objects {
-            updateStorage(with: object)
+        objects.forEach {
+            updateStorage(with: $0)
         }
         try await commit()
     }
@@ -55,8 +63,25 @@ class Service<T: StoredObject>: ServiceProtocol {
     }
     
     func commit() async throws {
-        try await storage.save(collection: storedObjects)
+        try await local.save(collection: storedObjects)
     }
+    
+    func commitBackup() async throws {
+        try await backup.save(collection: storedObjects)
+    }
+    
+    func restore() async throws {
+        storedObjects = try await backup.load()
+        try await commit()
+    }
+    
+    func backup() async throws {
+        guard let lastBackup = try backup.location.lastUpdated else { return }
+        guard backupPolicy.shouldBackup(lastBackup: lastBackup) else { return }
+        try await commitBackup()
+    }
+
+    // MARK: Private
     
     private func updateStorage(with object: T) {
         if let index = storedObjects.firstIndex(where: { $0 == object }) {

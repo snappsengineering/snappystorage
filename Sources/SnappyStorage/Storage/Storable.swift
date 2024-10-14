@@ -39,7 +39,7 @@ extension StoredObject: Encodable {
 
 extension StoredObject: Equatable {
     static func == (lhs: StoredObject, rhs: StoredObject) -> Bool{
-        return lhs.objectID == rhs.objectID
+        return lhs.objectID == rhs.objectID && lhs.updatedAt == rhs.updatedAt
     }
 }
 
@@ -48,8 +48,14 @@ extension StoredObject {
         get { (attributes[.objectID] as? String)! }
         set { attributes[.objectID] = newValue }
     }
+    
+    var updatedAt: Date {
+        get { (attributes[.updatedAt] as? Date)! }
+        set { attributes[.updatedAt] = newValue }
+    }
 }
 
 private extension String {
     static let objectID = "objectID"
+    static let updatedAt = "updatedAt"
 }
