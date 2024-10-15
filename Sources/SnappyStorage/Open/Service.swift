@@ -26,7 +26,10 @@ open class Service<T: Storable>: ServiceProtocol {
     private var local: Storage<T>?
     private var backup: Storage<T>?
     private var backupPolicy: BackupPolicy
-    private var storedObjects: [T] = []
+    
+    // MARK: Public Properties
+    
+    public var storedObjects: [T] = []
     
     // MARK: init
     
@@ -38,8 +41,7 @@ open class Service<T: Storable>: ServiceProtocol {
         self.setStorage(backupPolicy: backupPolicy, crypt: crypt)
     }
     
-    func setStorage(backupPolicy: BackupPolicy, crypt: Crypt) {
-        
+    private func setStorage(backupPolicy: BackupPolicy, crypt: Crypt) {
         let fileManager = FileManager.default
         
         let location = Location<T>(destination: .local, fileManager: fileManager)
