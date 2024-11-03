@@ -32,7 +32,7 @@ open class Service<T: Storable>: ServiceProtocol {
     
     // MARK: init
 
-    public init(backupPolicy: BackupPolicy, encryptionEnabled: Bool) async throws {
+    public init(backupPolicy: BackupPolicy, encryptionEnabled: Bool) async {
         
         self.backupPolicy = backupPolicy
         let crypt = Crypt.init(isEnabled: encryptionEnabled)
