@@ -12,3 +12,11 @@ import Foundation
 public protocol Storable: Equatable, Codable {
     var objectID: String { get }
 }
+
+// MARK: - Extension
+
+extension Storable  {
+    var objectID: String {
+        UUID().uuidString
+    }
+}
