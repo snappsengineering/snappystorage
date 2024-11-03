@@ -11,8 +11,7 @@ import Foundation
 
 public protocol ServiceProtocol {
     associatedtype T
-    
-    func load() async throws -> [T]
+
     func fetch(with fetchID: String) async throws -> T
     func save(_ object: T) async throws
     func save(_ objects: [T]) async throws
@@ -32,33 +31,22 @@ open class Service<T: Storable>: ServiceProtocol {
     public var storedObjects: [T] = []
     
     // MARK: init
-    
-    public init(backupPolicy: BackupPolicy, encryptionEnabled: Bool) {
+
+    public init(backupPolicy: BackupPolicy, encryptionEnabled: Bool) async throws {
         
         self.backupPolicy = backupPolicy
         let crypt = Crypt.init(isEnabled: encryptionEnabled)
         
         self.setStorage(backupPolicy: backupPolicy, crypt: crypt)
-    }
-    
-    private func setStorage(backupPolicy: BackupPolicy, crypt: Crypt) {
-        let fileManager = FileManager.default
         
-        let location = Location<T>(destination: .local, fileManager: fileManager)
-        self.local = Storage(crypt: crypt, location: location)
-        
-        guard backupPolicy.frequency != .never else { return }
-        
-        let backupLocation = Location<T>(destination: .cloud, fileManager: fileManager)
-        self.backup = Storage(crypt: crypt, location: backupLocation)
+        do {
+            try await pull()
+        } catch {
+            storedObjects = []
+        }
     }
     
     // MARK: Local DB Operations
-
-    public func load() async throws -> [T] {
-        try await pull()
-        return storedObjects
-    }
     
     public func fetch(with fetchID: String) async throws -> T {
         guard let item = storedObjects.filter({ $0.objectID == fetchID }).first else { throw SnappyError.dataNotFound }
@@ -114,6 +102,19 @@ open class Service<T: Storable>: ServiceProtocol {
         guard backupPolicy.frequency != .never,
         let backup else { throw SnappyError.invalidOperationError }
         try await backup.save(collection: storedObjects)
+    }
+    
+    private func setStorage(backupPolicy: BackupPolicy, crypt: Crypt) {
+        
+        let fileManager = FileManager.default
+        
+        let location = Location<T>(destination: .local, fileManager: fileManager)
+        self.local = Storage(crypt: crypt, location: location)
+        
+        guard backupPolicy.frequency != .never else { return }
+        
+        let backupLocation = Location<T>(destination: .cloud, fileManager: fileManager)
+        self.backup = Storage(crypt: crypt, location: backupLocation)
     }
     
     private func updateStorage(with object: T) {
