@@ -12,7 +12,7 @@ protocol Servicable {
     
     var collection: [T] { get set }
     
-    func fetchCollection() -> [T]
+    func refreshCollection() -> [T]
     func fetch(with fetchID: String) -> T?
     func save(_ objectToSave: T)
     func save(_ objectsToSave: [T])
@@ -30,7 +30,7 @@ open class Service<T: StoredObject>: Servicable {
         self.collection = storage.fetch()
     }
     
-    func fetchCollection() -> [T] {
+    public func refreshCollection() -> [T] {
         return collection
     }
     

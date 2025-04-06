@@ -18,8 +18,8 @@ class ServiceTests: XCTestCase {
         super.tearDown()
     }
     
-    func testFetchCollection() {
-        let collection = service.fetchCollection()
+    func testRefreshCollection() {
+        let collection = service.refreshCollection()
         XCTAssertNotNil(collection)
     }
     
@@ -43,7 +43,7 @@ class ServiceTests: XCTestCase {
         
         service.save([storedObject1, storedObject2])
         
-        let collection = service.fetchCollection()
+        let collection = service.refreshCollection()
         XCTAssertEqual(collection.count, 2)
         
         let fetchedObject1 = service.fetch(with: storedObject1.objectID)
@@ -97,7 +97,7 @@ class ServiceTests: XCTestCase {
         service.save(storedObject1)
         service.save(storedObject2)
         
-        let fetchedCollection = service.fetchCollection()
+        let fetchedCollection = service.refreshCollection()
         XCTAssertEqual(fetchedCollection.count, 2)
         
         let fetchedObject1 = service.fetch(with: storedObject1.objectID)
