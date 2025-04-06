@@ -11,7 +11,7 @@ public protocol Storable: ObservableObject, Equatable, Codable {
     var attributes: [String: Any] { get set }
 }
 
-public class StoredObject: Storable  {
+open class StoredObject: Storable  {
     public var attributes: [String : Any] = [:]
     
     init() {
