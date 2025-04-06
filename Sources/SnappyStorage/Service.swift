@@ -25,7 +25,7 @@ open class Service<T: StoredObject>: Servicable {
     
     public var collection: [T]
     
-    init() {
+    public init() {
         self.storage = Storage<T>()
         self.collection = storage.fetch()
     }
