@@ -7,18 +7,18 @@
 
 import Foundation
 
-protocol Storable: ObservableObject, Equatable, Codable {
+public protocol Storable: ObservableObject, Equatable, Codable {
     var attributes: [String: Any] { get set }
 }
 
-class StoredObject: Storable  {
-    var attributes: [String : Any] = [:]
+public class StoredObject: Storable  {
+    public var attributes: [String : Any] = [:]
     
     init() {
         objectID = UUID().uuidString
     }
     
-    required init(from decoder: Decoder) throws {
+    public required init(from decoder: Decoder) throws {
         let values = try decoder.container(keyedBy: CodingKeys.self)
         let data = try values.decode(Data.self, forKey: .attributes)
         attributes = try JSONSerialization.jsonObject(with: data, options: []) as! [String: Any]
@@ -30,7 +30,7 @@ extension StoredObject: Encodable {
         case attributes
     }
 
-    func encode(to encoder: Encoder) throws {
+    public func encode(to encoder: Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
         let data = try JSONSerialization.data(withJSONObject: attributes, options: [])
         try container.encode(data, forKey: .attributes)
@@ -38,7 +38,7 @@ extension StoredObject: Encodable {
 }
 
 extension StoredObject: Equatable {
-    static func == (lhs: StoredObject, rhs: StoredObject) -> Bool{
+    public static func == (lhs: StoredObject, rhs: StoredObject) -> Bool{
         return lhs.objectID == rhs.objectID
     }
 }

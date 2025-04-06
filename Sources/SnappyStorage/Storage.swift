@@ -7,7 +7,7 @@
 
 import Foundation
 
-class Storage<T: Storable> {
+public class Storage<T: Storable> {
     func fetch() -> [T] {
         guard let fileURL = getFilePath() else { return [] }
         return fetchFrom(fileURL: fileURL) ?? []

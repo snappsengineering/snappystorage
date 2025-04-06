@@ -19,7 +19,7 @@ protocol Servicable {
     func delete(_ objectToDelete: T)
 }
 
-class Service<T: StoredObject>: Servicable {
+public class Service<T: StoredObject>: Servicable {
     
     private var storage: Storage<T>
     
