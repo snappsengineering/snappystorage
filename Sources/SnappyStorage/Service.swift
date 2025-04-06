@@ -38,7 +38,7 @@ public class Service<T: StoredObject>: Servicable {
         return collection.filter { $0.objectID == fetchID }.first
     }
     
-    func save(_ objectToSave: T) {
+    public func save(_ objectToSave: T) {
         saveAndReplaceIfNeeded(objectToSave)
         update()
     }
@@ -56,7 +56,7 @@ public class Service<T: StoredObject>: Servicable {
         }
     }
     
-    func delete(_ objectToDelete: T) {
+    public func delete(_ objectToDelete: T) {
         collection.removeAll(where: { $0 == objectToDelete })
         update()
     }
