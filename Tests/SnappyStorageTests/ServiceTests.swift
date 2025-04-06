@@ -1,0 +1,109 @@
+import XCTest
+@testable import SnappyStorage
+
+class ServiceTests: XCTestCase {
+    
+    var service: Service<StoredObject>!
+    
+    override func setUp() {
+        super.setUp()
+        service = Service<StoredObject>()
+        // Clear the storage before each test to avoid interference between tests
+        service.collection.removeAll()
+        service.update()
+    }
+    
+    override func tearDown() {
+        service = nil
+        super.tearDown()
+    }
+    
+    func testFetchCollection() {
+        let collection = service.fetchCollection()
+        XCTAssertNotNil(collection)
+    }
+    
+    func testSaveAndFetchObject() {
+        let storedObject = StoredObject()
+        storedObject.attributes["key"] = "value"
+        
+        service.save(storedObject)
+        
+        let fetchedObject = service.fetch(with: storedObject.objectID)
+        XCTAssertNotNil(fetchedObject)
+        XCTAssertEqual(fetchedObject?.attributes["key"] as? String, "value")
+    }
+    
+    func testSaveMultipleObjects() {
+        let storedObject1 = StoredObject()
+        storedObject1.attributes["key"] = "value1"
+        
+        let storedObject2 = StoredObject()
+        storedObject2.attributes["key"] = "value2"
+        
+        service.save([storedObject1, storedObject2])
+        
+        let collection = service.fetchCollection()
+        XCTAssertEqual(collection.count, 2)
+        
+        let fetchedObject1 = service.fetch(with: storedObject1.objectID)
+        let fetchedObject2 = service.fetch(with: storedObject2.objectID)
+        
+        XCTAssertEqual(fetchedObject1?.attributes["key"] as? String, "value1")
+        XCTAssertEqual(fetchedObject2?.attributes["key"] as? String, "value2")
+    }
+    
+    func testDeleteObject() {
+        let storedObject = StoredObject()
+        service.save(storedObject)
+        
+        service.delete(storedObject)
+        
+        let fetchedObject = service.fetch(with: storedObject.objectID)
+        XCTAssertNil(fetchedObject)
+    }
+    
+    func testSaveAndReplaceIfNeeded() {
+        let storedObject = StoredObject()
+        storedObject.attributes["key"] = "value"
+        
+        service.save(storedObject)
+        
+        storedObject.attributes["key"] = "newValue"
+        service.save(storedObject)
+        
+        let fetchedObject = service.fetch(with: storedObject.objectID)
+        XCTAssertEqual(fetchedObject?.attributes["key"] as? String, "newValue")
+    }
+    
+    func testUpdate() {
+        let storedObject = StoredObject()
+        storedObject.attributes["key"] = "value"
+        
+        service.save(storedObject)
+        
+        let fetchedObject = service.fetch(with: storedObject.objectID)
+        XCTAssertNotNil(fetchedObject)
+        XCTAssertEqual(fetchedObject?.attributes["key"] as? String, "value")
+    }
+    
+    func testSaveAndReplaceIfNeededNewObject() {
+        let storedObject1 = StoredObject()
+        storedObject1.attributes["key"] = "value1"
+        
+        let storedObject2 = StoredObject()
+        storedObject2.attributes["key"] = "value2"
+        
+        service.save(storedObject1)
+        service.save(storedObject2)
+        
+        let fetchedCollection = service.fetchCollection()
+        XCTAssertEqual(fetchedCollection.count, 2)
+        
+        let fetchedObject1 = service.fetch(with: storedObject1.objectID)
+        let fetchedObject2 = service.fetch(with: storedObject2.objectID)
+        
+        XCTAssertEqual(fetchedObject1?.attributes["key"] as? String, "value1")
+        XCTAssertEqual(fetchedObject2?.attributes["key"] as? String, "value2")
+    }
+}

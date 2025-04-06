@@ -2,7 +2,7 @@
 //  Service.swift
 //  snappystorage
 //
-//  Created by snapps engineering ltd.
+//  Created by Shane Noormohamed on 12/25/23.
 //
 
 import Foundation
@@ -48,7 +48,7 @@ class Service<T: StoredObject>: Servicable {
         update()
     }
     
-    private func saveAndReplaceIfNeeded(_ objectToSave: T) {
+    func saveAndReplaceIfNeeded(_ objectToSave: T) {
         if let index = collection.firstIndex(where: { $0 == objectToSave }) {
             collection[index] = objectToSave
         } else {
@@ -61,8 +61,8 @@ class Service<T: StoredObject>: Servicable {
         update()
     }
     
-    private func update() {
+    func update() {
         self.storage.store(collection: self.collection)
         self.collection = self.storage.fetch()
     }
- }
+}

@@ -18,41 +18,34 @@ class Storage<T: Storable> {
         writeTo(fileURL: fileURL, collection: collection)
     }
     
-    private func fetchFrom(fileURL: URL) -> [T]? {
+    func fetchFrom(fileURL: URL) -> [T]? {
         let jsonDecoder = JSONDecoder()
         do {
-            if let jsonData = try? Data(contentsOf: fileURL) {
-                return try jsonDecoder.decode([T].self, from: jsonData)
-            }
-        } catch let error as NSError {
-            print(error.localizedDescription)
+            let jsonData = try Data(contentsOf: fileURL)
+            return try jsonDecoder.decode([T].self, from: jsonData)
+        } catch {
+            print("Error decoding data: \(error.localizedDescription)")
+            return nil
         }
-        return nil
     }
     
-    private func writeTo(fileURL: URL, collection: [T]) {
+    func writeTo(fileURL: URL, collection: [T]) {
         let jsonEncoder = JSONEncoder()
         do {
             let jsonData = try jsonEncoder.encode(collection)
             try jsonData.write(to: fileURL, options: .atomic)
-        } catch let error as NSError {
-            print(error.localizedDescription)
-        }
-    }
-    
-    private func getFilePath() -> URL? {
-        let fileManager = FileManager.default
-        let urls = fileManager.urls(for: .documentDirectory, in: .userDomainMask)
-        guard let applicationSupportURL = urls.last else { return nil }
-        do {
-            try fileManager.createDirectory(at: applicationSupportURL, withIntermediateDirectories: true, attributes: nil)
         } catch {
-            print(error)
+            print("Error writing data: \(error.localizedDescription)")
         }
-        return applicationSupportURL.appendingPathComponent(fileName)
     }
     
-    private var fileName: String {
+    func getFilePath() -> URL? {
+        let fileManager = FileManager.default
+        let storeURL = try? fileManager.url(for: .documentDirectory, in: .userDomainMask, appropriateFor: nil, create: true)
+        return storeURL?.appendingPathComponent(fileName)
+    }
+    
+    var fileName: String {
         return "\(T.self)"
     }
 }
