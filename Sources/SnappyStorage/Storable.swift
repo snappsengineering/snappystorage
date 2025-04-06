@@ -14,7 +14,7 @@ public protocol Storable: ObservableObject, Equatable, Codable {
 open class StoredObject: Storable  {
     public var attributes: [String : Any] = [:]
     
-    init() {
+    public init() {
         objectID = UUID().uuidString
     }
     
