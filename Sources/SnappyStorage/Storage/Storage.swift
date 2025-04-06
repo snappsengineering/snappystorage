@@ -5,10 +5,9 @@
 //  Copyright © 2024 snapps engineering ltd. All rights reserved.
 //
 
-import CommonCrypto
 import Foundation
 
-final class Storage<T: Storable> {
+final public class Storage<T: Storable> {
 
     // MARK: Public Properties
     
@@ -16,24 +15,18 @@ final class Storage<T: Storable> {
     
     // MARK: Private Properties
 
-    private let crypt: Crypt
     private let decoder: JSONDecoder
     private let encoder: JSONEncoder
     
     // MARK: init
     
-    init(crypt: Crypt, location: Location<T>, decoder: JSONDecoder = JSONDecoder(), encoder: JSONEncoder = JSONEncoder()) {
+    init(location: Location<T>, decoder: JSONDecoder = JSONDecoder(), encoder: JSONEncoder = JSONEncoder()) {
         self.location = location
-        self.crypt = crypt
         self.decoder = decoder
         self.encoder = encoder
     }
     
     // MARK: Save/Load
-
-    // TODO: Add Mock object
-    // TODO: Add ability to save files, images, and videos
-    // TODO: Testing!!!
     
     // MARK: Public functions
     
@@ -41,8 +34,7 @@ final class Storage<T: Storable> {
         guard let url = location.url else { throw SnappyError.fileNotFound }
         guard location.fileExists else { throw SnappyError.fileNotFound }
         let data = try Data(contentsOf: url)
-        let decryptedResults = try await decryptedRead(data: data)
-        let results = try decoder.decode([T].self, from: decryptedResults)
+        let results = try decoder.decode([T].self, from: data)
         guard !results.isEmpty else { throw SnappyError.emptyDataError }
         return results
     }
@@ -53,7 +45,7 @@ final class Storage<T: Storable> {
             return
         }
         let encodedElement = try encoder.encode(element)
-        try await encryptedWrite(data: encodedElement)
+        try await write(data: encodedElement)
     }
     
     func save(collection: [T]) async throws {
@@ -62,18 +54,13 @@ final class Storage<T: Storable> {
             return
         }
         let encodedCollection = try encoder.encode(collection)
-        try await encryptedWrite(data: encodedCollection)
+        try await write(data: encodedCollection)
     }
     
     // MARK: Private functions
     
-    private func decryptedRead(data: Data) async throws -> Data {
-        return try crypt.decrypt(data: data)
-    }
-    
-    private func encryptedWrite(data: Data) async throws {
+    private func write(data: Data) async throws {
         guard let url = location.url else { throw SnappyError.fileNotFound }
-        let encryptedData = try crypt.encrypt(data: data)
-        try encryptedData.write(to: url, options: .atomic)
+        try data.write(to: url, options: .atomic)
     }
 }

@@ -61,8 +61,8 @@ final class Location<T: Storable> {
         var locationURL: URL?
 
         switch destination {
-        case .local:
-            guard let directoryURL = fileManager.urls(for: .documentDirectory, in: .userDomainMask).last else { return nil }
+        case .local(let directory):
+            guard let directoryURL = fileManager.urls(for: directory, in: .userDomainMask).last else { return nil }
             locationURL = directoryURL
         case .cloud:
             guard let cloudURL = fileManager.url(forUbiquityContainerIdentifier: nil) else { return nil }
@@ -77,7 +77,7 @@ final class Location<T: Storable> {
     // MARK: Enums
     
     enum Destination {
-        case local
+        case local(FileManager.SearchPathDirectory)
         case cloud
     }
     
