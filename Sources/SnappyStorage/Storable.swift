@@ -23,9 +23,7 @@ open class StoredObject: Storable  {
         let data = try values.decode(Data.self, forKey: .attributes)
         attributes = try JSONSerialization.jsonObject(with: data, options: []) as! [String: Any]
     }
-}
-
-extension StoredObject: Encodable {
+    
     enum CodingKeys: String, CodingKey {
         case attributes
     }
