@@ -28,7 +28,7 @@ open class StoredObject: Storable  {
         case attributes
     }
 
-    public func encode(to encoder: Encoder) throws {
+    open func encode(to encoder: Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
         let data = try JSONSerialization.data(withJSONObject: attributes, options: [])
         try container.encode(data, forKey: .attributes)
