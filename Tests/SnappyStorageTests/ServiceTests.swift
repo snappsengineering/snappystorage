@@ -1,3 +1,10 @@
+//
+//  ServiceTests.swift
+//  SnappyStorage
+//
+//  Created by snapps engineering ltd.
+//
+
 import XCTest
 @testable import SnappyStorage
 

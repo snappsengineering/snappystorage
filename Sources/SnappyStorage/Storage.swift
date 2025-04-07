@@ -8,46 +8,53 @@
 import Foundation
 
 public class Storage<T: Storable> {
-    func fetch() -> [T] {
-        guard let fileURL = getFilePath() else { return [] }
-        return fetchFrom(fileURL: fileURL) ?? []
+    
+    
+    private let jsonDecoder: JSONDecoder
+    private let jsonEncoder: JSONEncoder
+    
+    var location: Location<T>
+    
+    init(
+        jsonDecoder: JSONDecoder = JSONDecoder(),
+        jsonEncoder: JSONEncoder = JSONEncoder(),
+        location: Location<T>
+    ) {
+        self.jsonDecoder = jsonDecoder
+        self.jsonEncoder = jsonEncoder
+        self.location = location
     }
-
+    
     func store(collection: [T]) {
-        guard let fileURL = getFilePath() else { return }
+        
+        guard let fileURL = location.url
+        else { return }
+        
         writeTo(fileURL: fileURL, collection: collection)
     }
     
-    func fetchFrom(fileURL: URL) -> [T]? {
-        let fileManager = FileManager.default
-        guard fileManager.fileExists(atPath: fileURL.path) else { return nil }
-        let jsonDecoder = JSONDecoder()
+    func fetch() -> [T] {
+
+        guard location.fileExists,
+              let fileURL = location.url
+        else { return [] }
+
         do {
             let jsonData = try Data(contentsOf: fileURL)
             return try jsonDecoder.decode([T].self, from: jsonData)
         } catch {
             print("Error decoding data: \(error.localizedDescription)")
-            return nil
+            return []
         }
+
     }
     
     func writeTo(fileURL: URL, collection: [T]) {
-        let jsonEncoder = JSONEncoder()
         do {
             let jsonData = try jsonEncoder.encode(collection)
             try jsonData.write(to: fileURL, options: .atomic)
         } catch {
             print("Error writing data: \(error.localizedDescription)")
         }
-    }
-    
-    func getFilePath() -> URL? {
-        let fileManager = FileManager.default
-        let storeURL = try? fileManager.url(for: .documentDirectory, in: .userDomainMask, appropriateFor: nil, create: true)
-        return storeURL?.appendingPathComponent(fileName)
-    }
-    
-    var fileName: String {
-        return "\(T.self)"
     }
 }

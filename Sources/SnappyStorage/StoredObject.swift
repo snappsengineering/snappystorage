@@ -1,5 +1,5 @@
 //
-//  Storable.swift
+//  StoredObject.swift
 //  snappystorage
 //
 //  Created by snapps engineering ltd.

@@ -2,7 +2,7 @@
 //  Service.swift
 //  snappystorage
 //
-//  Created by Shane Noormohamed on 12/25/23.
+//  Created by snapps engineering ltd.
 //
 
 import Foundation
@@ -21,12 +21,14 @@ protocol Servicable {
 
 open class Service<T: StoredObject>: Servicable {
     
+    private var location: Location<T>
     private var storage: Storage<T>
     
     public var collection: [T]
     
     public init() {
-        self.storage = Storage<T>()
+        self.location = Location<T>(destination: .local(.documentDirectory))
+        self.storage = Storage<T>(location: location)
         self.collection = storage.fetch()
     }
     
