@@ -19,6 +19,8 @@ public class Storage<T: Storable> {
     }
     
     func fetchFrom(fileURL: URL) -> [T]? {
+        let fileManager = FileManager.default
+        guard fileManager.fileExists(atPath: fileURL.path) else { return nil }
         let jsonDecoder = JSONDecoder()
         do {
             let jsonData = try Data(contentsOf: fileURL)
