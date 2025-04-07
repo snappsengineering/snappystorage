@@ -57,6 +57,9 @@ final class Location<T: Storable> {
             guard let cloudURL = fileManager.url(forUbiquityContainerIdentifier: nil) else { return nil }
             let documentsURL = cloudURL.appendingPathComponent(Folder.documents.rawValue)
             locationURL = documentsURL
+        case .custom(let path):
+            let url = URL(string: path)
+            locationURL = url
         }
         
         let fileURL = locationURL?.appendingPathComponent(fileName)
@@ -68,6 +71,7 @@ final class Location<T: Storable> {
     enum Destination {
         case local(FileManager.SearchPathDirectory)
         case cloud
+        case custom(String)
     }
 
     enum Folder {
