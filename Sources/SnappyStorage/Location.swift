@@ -44,29 +44,6 @@ final class Location<T: Storable> {
         self.url = makeURL(for: destination)
     }
     
-    // MARK: Public
-    
-    // TODO: createDirectoryIfNotExist and removeDirectory are not in use yet
-    // TODO: Adjust code to throw errors ie: SnappyErrors
-    
-    func createDirectoryIfNotExist() throws {
-        guard let url = url,
-              !fileExists
-        else {
-            throw SnappyError.invalidOperationError("Could not create directory at \(String(describing: url)). It may already exist.")
-        }
-        try fileManager.createDirectory(at: url, withIntermediateDirectories: true, attributes: nil)
-    }
-    
-    func removeDirectory() throws {
-        guard let url = url,
-              fileExists
-        else {
-            throw SnappyError.invalidOperationError("Could not remove directory at \(String(describing: url)). It may not exist.")
-        }
-        try fileManager.removeItem(at: url)
-    }
-    
     // MARK: Private
     
     internal func makeURL(for destination: Destination) -> URL? {
