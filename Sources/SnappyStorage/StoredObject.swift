@@ -7,11 +7,15 @@
 
 import Foundation
 
-public protocol Storable: ObservableObject, Equatable, Codable {
+public protocol Storable: ObservableObject, Equatable, Codable, Identifiable {
     var attributes: [String: Any] { get set }
 }
 
 open class StoredObject: Storable  {
+    public var id: String {
+        return objectID
+    }
+
     public var attributes: [String : Any] = [:]
     
     public init() {

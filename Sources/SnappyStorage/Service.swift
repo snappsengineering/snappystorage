@@ -20,14 +20,13 @@ protocol Servicable {
 }
 
 open class Service<T: StoredObject>: Servicable {
-    
-    private var location: Location<T>
+
     private var storage: Storage<T>
     
     public var collection: [T]
     
     public init() {
-        self.location = Location<T>(destination: .local(.documentDirectory))
+        let location = Location<T>(destination: .local(.documentDirectory))
         self.storage = Storage<T>(location: location)
         self.collection = storage.fetch()
     }
