@@ -9,7 +9,7 @@ import Foundation
 
 // MARK: Enums
 
-enum Destination {
+public enum Destination {
     case local(FileManager.SearchPathDirectory)
     case cloud
     case custom(String)
