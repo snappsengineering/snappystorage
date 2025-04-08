@@ -12,7 +12,7 @@ public protocol Storable: Equatable, Codable, Identifiable {
     var attributes: [String: Any] { get set }
 }
 
-extension Storable {
+public extension Storable {
     var id: String {
         objectID
     }
