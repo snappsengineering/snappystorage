@@ -14,13 +14,9 @@ struct StoredObject: Storable {
         lhs.objectID == rhs.objectID
     }
     
-    var id: String {
-        objectID
-    }
-    
     var attributes: [String: Any] = [:]
     
-    init(objectID: String = UUID().uuidString, key: String) {
+    init(objectID: String = HexGenerator.generateHexID(), key: String) {
         self.objectID = objectID
         self.key = key
     }
