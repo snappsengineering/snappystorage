@@ -12,8 +12,7 @@ class StorageTests: XCTestCase {
     func testStoreAndFetch() {
         let storage = Storage<StoredObject>(destination: .local(.documentDirectory))
         
-        let storedObject = StoredObject()
-        storedObject.attributes["key"] = "value"
+        let storedObject = StoredObject.value
         
         storage.store(collection: [storedObject])
         let fetchedCollection = storage.fetch()
@@ -25,8 +24,7 @@ class StorageTests: XCTestCase {
     func testFetchFromFileURL() {
         let storage = Storage<StoredObject>(destination: .local(.documentDirectory))
         
-        let storedObject = StoredObject()
-        storedObject.attributes["key"] = "value"
+        let storedObject = StoredObject.value
         
         let fileManager = FileManager.default
         let urls = fileManager.urls(for: .documentDirectory, in: .userDomainMask)
@@ -45,8 +43,7 @@ class StorageTests: XCTestCase {
     
     func testWriteToFileURL() {
         let storage = Storage<StoredObject>(destination: .local(.documentDirectory))
-        let storedObject = StoredObject()
-        storedObject.attributes["key"] = "value"
+        let storedObject = StoredObject.value
         
         let fileManager = FileManager.default
         let urls = fileManager.urls(for: .documentDirectory, in: .userDomainMask)
@@ -63,15 +60,12 @@ class StorageTests: XCTestCase {
     }
     
     func testWriteToFileURLFailure() {
-        let storage = Storage<StoredObject>(destination: .local(.documentDirectory))
-        let storedObject = StoredObject()
-        storedObject.attributes["key"] = "value"
-        
-        let fileURL = URL(fileURLWithPath: "/invalid/path")
+        let storage = Storage<StoredObject>(destination: .custom("/invalid/path"))
+        let storedObject = StoredObject.value
         
         storage.store(collection: [storedObject])
         
-        XCTAssertFalse(FileManager.default.fileExists(atPath: fileURL.path))
+        XCTAssertFalse(storage.fileExists)
     }
     
     func testFetchReturnEmptyCollection() {

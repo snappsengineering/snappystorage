@@ -13,22 +13,27 @@ public class Storage<T: Storable> {
     private let jsonDecoder: JSONDecoder
     private let jsonEncoder: JSONEncoder
     private let fileManager: FileManager
-    private let location: Location<T>
     
     private var storageURL: URL?
+    
+    var fileExists: Bool {
+        guard let path = storageURL?.path else { return false }
+        return fileManager.fileExists(atPath: path)
+    }
     
     init(
         jsonDecoder: JSONDecoder = JSONDecoder(),
         jsonEncoder: JSONEncoder = JSONEncoder(),
         fileManager: FileManager = .default,
-        destination: Destination
+        destination: Destination<T>
     ) {
+
         self.jsonDecoder = jsonDecoder
         self.jsonEncoder = jsonEncoder
         self.fileManager = fileManager
-        
-        self.location = Location(fileManager: fileManager, destination: destination)
-        self.storageURL = location.url
+
+        self.storageURL = destination.makeURL(with: fileManager)
+
     }
 
     func store(collection: [T]) {
@@ -42,12 +47,13 @@ public class Storage<T: Storable> {
         } catch {
             print("Error writing data: \(error.localizedDescription)")
         }
+
     }
     
     func fetch() -> [T] {
         
         guard let storageURL,
-              location.fileExists
+              fileExists
         else { return [] }
 
         do {

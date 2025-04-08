@@ -31,8 +31,7 @@ class ServiceTests: XCTestCase {
     }
     
     func testSaveAndFetchObject() {
-        let storedObject = StoredObject()
-        storedObject.attributes["key"] = "value"
+        let storedObject = StoredObject.value
         
         service.save(storedObject)
         
@@ -42,11 +41,8 @@ class ServiceTests: XCTestCase {
     }
     
     func testSaveMultipleObjects() {
-        let storedObject1 = StoredObject()
-        storedObject1.attributes["key"] = "value1"
-        
-        let storedObject2 = StoredObject()
-        storedObject2.attributes["key"] = "value2"
+        let storedObject1 = StoredObject.value1
+        let storedObject2 = StoredObject.value2
         
         service.save([storedObject1, storedObject2])
         
@@ -61,7 +57,7 @@ class ServiceTests: XCTestCase {
     }
     
     func testDeleteObject() {
-        let storedObject = StoredObject()
+        let storedObject = StoredObject.value
         service.save(storedObject)
         
         service.delete(storedObject)
@@ -71,12 +67,11 @@ class ServiceTests: XCTestCase {
     }
     
     func testSaveAndReplaceIfNeeded() {
-        let storedObject = StoredObject()
-        storedObject.attributes["key"] = "value"
+        var storedObject = StoredObject.value
         
         service.save(storedObject)
         
-        storedObject.attributes["key"] = "newValue"
+        storedObject.key = "newValue"
         service.save(storedObject)
         
         let fetchedObject = service.fetch(with: storedObject.objectID)
@@ -84,8 +79,7 @@ class ServiceTests: XCTestCase {
     }
     
     func testUpdate() {
-        let storedObject = StoredObject()
-        storedObject.attributes["key"] = "value"
+        let storedObject = StoredObject.value
         
         service.save(storedObject)
         
@@ -95,11 +89,8 @@ class ServiceTests: XCTestCase {
     }
     
     func testSaveAndReplaceIfNeededNewObject() {
-        let storedObject1 = StoredObject()
-        storedObject1.attributes["key"] = "value1"
-        
-        let storedObject2 = StoredObject()
-        storedObject2.attributes["key"] = "value2"
+        let storedObject1 = StoredObject.value1
+        let storedObject2 = StoredObject.value2
         
         service.save(storedObject1)
         service.save(storedObject2)

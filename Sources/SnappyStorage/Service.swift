@@ -19,13 +19,13 @@ protocol Servicable {
     func delete(_ objectToDelete: T)
 }
 
-open class Service<T: StoredObject>: Servicable {
+open class Service<T: Storable>: Servicable {
 
     private var storage: Storage<T>
     
     public var collection: [T]
     
-    public init(destination: Destination = .local(.documentDirectory)) {
+    public init(destination: Destination<T> = .local(.documentDirectory)) {
         self.storage = Storage<T>(destination: destination)
         self.collection = storage.fetch()
     }
