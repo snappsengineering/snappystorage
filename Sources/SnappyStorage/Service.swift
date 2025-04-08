@@ -26,8 +26,7 @@ open class Service<T: StoredObject>: Servicable {
     public var collection: [T]
     
     public init() {
-        let location = Location<T>(destination: .local(.documentDirectory))
-        self.storage = Storage<T>(location: location)
+        self.storage = Storage<T>(destination: .local(.documentDirectory))
         self.collection = storage.fetch()
     }
     

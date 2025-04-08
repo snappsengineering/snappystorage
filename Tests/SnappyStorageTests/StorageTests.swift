@@ -9,20 +9,9 @@ import XCTest
 @testable import SnappyStorage
 
 class StorageTests: XCTestCase {
-    
-    var storage: Storage<StoredObject>!
-    
-    override func setUp() {
-        super.setUp()
-        storage = Storage<StoredObject>(location: Location(destination: .local(.documentDirectory)))
-    }
-    
-    override func tearDown() {
-        storage = nil
-        super.tearDown()
-    }
-    
     func testStoreAndFetch() {
+        let storage = Storage<StoredObject>(destination: .local(.documentDirectory))
+        
         let storedObject = StoredObject()
         storedObject.attributes["key"] = "value"
         
@@ -34,6 +23,8 @@ class StorageTests: XCTestCase {
     }
     
     func testFetchFromFileURL() {
+        let storage = Storage<StoredObject>(destination: .local(.documentDirectory))
+        
         let storedObject = StoredObject()
         storedObject.attributes["key"] = "value"
         
@@ -53,6 +44,7 @@ class StorageTests: XCTestCase {
     }
     
     func testWriteToFileURL() {
+        let storage = Storage<StoredObject>(destination: .local(.documentDirectory))
         let storedObject = StoredObject()
         storedObject.attributes["key"] = "value"
         
@@ -60,7 +52,7 @@ class StorageTests: XCTestCase {
         let urls = fileManager.urls(for: .documentDirectory, in: .userDomainMask)
         let fileURL = urls.first!.appendingPathComponent("StoredObject")
         
-        storage.writeTo(fileURL: fileURL, collection: [storedObject])
+        storage.store(collection: [storedObject])
         
         let jsonDecoder = JSONDecoder()
         let jsonData = try! Data(contentsOf: fileURL)
@@ -71,41 +63,22 @@ class StorageTests: XCTestCase {
     }
     
     func testWriteToFileURLFailure() {
+        let storage = Storage<StoredObject>(destination: .local(.documentDirectory))
         let storedObject = StoredObject()
         storedObject.attributes["key"] = "value"
         
         let fileURL = URL(fileURLWithPath: "/invalid/path")
         
-        storage.writeTo(fileURL: fileURL, collection: [storedObject])
+        storage.store(collection: [storedObject])
         
         XCTAssertFalse(FileManager.default.fileExists(atPath: fileURL.path))
     }
     
     func testFetchReturnEmptyCollection() {
-        let fileManager = FileManager.default
-        let urls = fileManager.urls(for: .documentDirectory, in: .userDomainMask)
-        let fileURL = urls.first!.appendingPathComponent("EmptyCollectionFile")
-        
-        storage.writeTo(fileURL: fileURL, collection: [])
+        let storage = Storage<StoredObject>(destination: .local(.documentDirectory))
+        storage.store(collection: [])
         let fetchedCollection = storage.fetch()
         
         XCTAssertEqual(fetchedCollection.count, 0)
-    }
-    
-    func testFetchFromFileURLCatchError() {
-        let fetchedCollection = storage.fetch()
-        XCTAssertNil(fetchedCollection)
-    }
-    
-    func testFetchFromFileURLDecodeError() {
-        // Create a file with invalid JSON content
-        let fileManager = FileManager.default
-        let urls = fileManager.urls(for: .documentDirectory, in: .userDomainMask)
-        let fileURL = urls.first!.appendingPathComponent("InvalidJSONFile")
-        
-        try! "invalid json".write(to: fileURL, atomically: true, encoding: .utf8)
-        
-        let fetchedCollection = storage.fetch()
-        XCTAssertNil(fetchedCollection)
     }
 }

@@ -12,49 +12,51 @@ public class Storage<T: Storable> {
     
     private let jsonDecoder: JSONDecoder
     private let jsonEncoder: JSONEncoder
+    private let fileManager: FileManager
+    private let location: Location<T>
     
-    var location: Location<T>
+    private var storageURL: URL?
     
     init(
         jsonDecoder: JSONDecoder = JSONDecoder(),
         jsonEncoder: JSONEncoder = JSONEncoder(),
-        location: Location<T>
+        fileManager: FileManager = .default,
+        destination: Destination
     ) {
         self.jsonDecoder = jsonDecoder
         self.jsonEncoder = jsonEncoder
-        self.location = location
+        self.fileManager = fileManager
+        
+        self.location = Location(fileManager: fileManager, destination: destination)
+        self.storageURL = location.url
     }
-    
+
     func store(collection: [T]) {
         
-        guard let fileURL = location.url
+        guard let storageURL
         else { return }
         
-        writeTo(fileURL: fileURL, collection: collection)
+        do {
+            let jsonData = try jsonEncoder.encode(collection)
+            try jsonData.write(to: storageURL, options: .atomic)
+        } catch {
+            print("Error writing data: \(error.localizedDescription)")
+        }
     }
     
     func fetch() -> [T] {
-
-        guard location.fileExists,
-              let fileURL = location.url
+        
+        guard let storageURL,
+              location.fileExists
         else { return [] }
 
         do {
-            let jsonData = try Data(contentsOf: fileURL)
+            let jsonData = try Data(contentsOf: storageURL)
             return try jsonDecoder.decode([T].self, from: jsonData)
         } catch {
             print("Error decoding data: \(error.localizedDescription)")
             return []
         }
 
-    }
-    
-    func writeTo(fileURL: URL, collection: [T]) {
-        do {
-            let jsonData = try jsonEncoder.encode(collection)
-            try jsonData.write(to: fileURL, options: .atomic)
-        } catch {
-            print("Error writing data: \(error.localizedDescription)")
-        }
     }
 }
