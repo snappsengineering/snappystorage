@@ -49,7 +49,7 @@ open class Service<T: Storable>: Servicable {
     }
     
     func saveAndReplaceIfNeeded(_ objectToSave: T) {
-        if let index = collection.firstIndex(where: { $0 == objectToSave }) {
+        if let index = collection.firstIndex(where: { $0.id == objectToSave.id }) {
             collection[index] = objectToSave
         } else {
             collection.append(objectToSave)
@@ -57,7 +57,7 @@ open class Service<T: Storable>: Servicable {
     }
     
     public func delete(_ objectToDelete: T) {
-        collection.removeAll(where: { $0 == objectToDelete })
+        collection.removeAll(where: { $0.id == objectToDelete.id })
         update()
     }
     

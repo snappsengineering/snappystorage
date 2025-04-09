@@ -18,7 +18,7 @@ class StorageTests: XCTestCase {
         let fetchedCollection = storage.fetch()
         
         XCTAssertEqual(fetchedCollection.count, 1)
-        XCTAssertEqual(fetchedCollection.first?.attributes["key"] as? String, "value")
+        XCTAssertEqual(fetchedCollection.first?.key as? String, "value")
     }
     
     func testFetchFromFileURL() {
@@ -38,7 +38,7 @@ class StorageTests: XCTestCase {
         
         XCTAssertNotNil(fetchedCollection)
         XCTAssertEqual(fetchedCollection.count, 1)
-        XCTAssertEqual(fetchedCollection.first?.attributes["key"] as? String, "value")
+        XCTAssertEqual(fetchedCollection.first?.key as? String, "value")
     }
     
     func testWriteToFileURL() {
@@ -56,7 +56,7 @@ class StorageTests: XCTestCase {
         let fetchedCollection = try! jsonDecoder.decode([StoredObject].self, from: jsonData)
         
         XCTAssertEqual(fetchedCollection.count, 1)
-        XCTAssertEqual(fetchedCollection.first?.attributes["key"] as? String, "value")
+        XCTAssertEqual(fetchedCollection.first?.key as? String, "value")
     }
     
     func testWriteToFileURLFailure() {

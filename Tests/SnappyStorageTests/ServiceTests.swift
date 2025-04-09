@@ -37,7 +37,7 @@ class ServiceTests: XCTestCase {
         
         let fetchedObject = service.fetch(with: storedObject.objectID)
         XCTAssertNotNil(fetchedObject)
-        XCTAssertEqual(fetchedObject?.attributes["key"] as? String, "value")
+        XCTAssertEqual(fetchedObject?.key as? String, "value")
     }
     
     func testSaveMultipleObjects() {
@@ -52,8 +52,8 @@ class ServiceTests: XCTestCase {
         let fetchedObject1 = service.fetch(with: storedObject1.objectID)
         let fetchedObject2 = service.fetch(with: storedObject2.objectID)
         
-        XCTAssertEqual(fetchedObject1?.attributes["key"] as? String, "value1")
-        XCTAssertEqual(fetchedObject2?.attributes["key"] as? String, "value2")
+        XCTAssertEqual(fetchedObject1?.key as? String, "value1")
+        XCTAssertEqual(fetchedObject2?.key as? String, "value2")
     }
     
     func testDeleteObject() {
@@ -75,7 +75,7 @@ class ServiceTests: XCTestCase {
         service.save(storedObject)
         
         let fetchedObject = service.fetch(with: storedObject.objectID)
-        XCTAssertEqual(fetchedObject?.attributes["key"] as? String, "newValue")
+        XCTAssertEqual(fetchedObject?.key as? String, "newValue")
     }
     
     func testUpdate() {
@@ -85,7 +85,7 @@ class ServiceTests: XCTestCase {
         
         let fetchedObject = service.fetch(with: storedObject.objectID)
         XCTAssertNotNil(fetchedObject)
-        XCTAssertEqual(fetchedObject?.attributes["key"] as? String, "value")
+        XCTAssertEqual(fetchedObject?.key as? String, "value")
     }
     
     func testSaveAndReplaceIfNeededNewObject() {
@@ -101,7 +101,7 @@ class ServiceTests: XCTestCase {
         let fetchedObject1 = service.fetch(with: storedObject1.objectID)
         let fetchedObject2 = service.fetch(with: storedObject2.objectID)
         
-        XCTAssertEqual(fetchedObject1?.attributes["key"] as? String, "value1")
-        XCTAssertEqual(fetchedObject2?.attributes["key"] as? String, "value2")
+        XCTAssertEqual(fetchedObject1?.key as? String, "value1")
+        XCTAssertEqual(fetchedObject2?.key as? String, "value2")
     }
 }
