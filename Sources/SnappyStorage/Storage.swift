@@ -55,14 +55,16 @@ public class Storage<T: Storable> {
         guard let storageURL,
               fileExists
         else { return [] }
-
+        
         do {
             let jsonData = try Data(contentsOf: storageURL)
+            print("File contents:")
+            print(String(data: jsonData, encoding: .utf8) ?? "Unable to print file contents")
             return try jsonDecoder.decode([T].self, from: jsonData)
         } catch {
             print("Error decoding data: \(error.localizedDescription)")
             return []
         }
-
+        
     }
 }
