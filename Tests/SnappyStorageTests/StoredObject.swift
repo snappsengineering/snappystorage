@@ -14,6 +14,10 @@ struct StoredObject: Storable {
         lhs.objectID == rhs.objectID
     }
     
+    var id: String {
+        objectID
+    }
+    
     var attributes: [String: Any] = [:]
     
     init(objectID: String = HexGenerator.generateHexID(), key: String) {
@@ -35,6 +39,11 @@ struct StoredObject: Storable {
         var container = encoder.container(keyedBy: CodingKeys.self)
         let data = try JSONSerialization.data(withJSONObject: attributes, options: [])
         try container.encode(data, forKey: .attributes)
+    }
+    
+    var objectID: String {
+        get { (attributes["objectID"] as? String)! }
+        set { attributes["objectID"] = newValue }
     }
     
     var key: String {
