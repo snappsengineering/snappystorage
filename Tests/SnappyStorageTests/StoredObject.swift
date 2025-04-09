@@ -11,7 +11,7 @@ import XCTest
 struct StoredObject: Storable {
     
     static func == (lhs: StoredObject, rhs: StoredObject) -> Bool {
-        lhs.objectID == rhs.objectID
+        lhs.id == rhs.id
     }
     
     var id: String {

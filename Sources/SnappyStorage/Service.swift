@@ -35,7 +35,7 @@ open class Service<T: Storable>: Servicable {
     }
     
     func fetch(with fetchID: String) -> T? {
-        return collection.filter { $0.objectID == fetchID }.first
+        return collection.filter { $0.id == fetchID }.first
     }
     
     public func save(_ objectToSave: T) {

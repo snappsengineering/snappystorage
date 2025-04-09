@@ -8,6 +8,6 @@
 import Foundation
 
 public protocol Storable: Equatable, Codable, Identifiable {
-    var objectID: String { get }
+    var id: String { get }
     var attributes: [String: Any] { get set }
 }
