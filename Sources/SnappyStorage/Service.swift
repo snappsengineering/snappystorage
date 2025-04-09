@@ -43,7 +43,7 @@ open class Service<T: Storable>: Servicable {
         update()
     }
     
-    public func save(_ objectsToSave: [T]) {
+    open func save(_ objectsToSave: [T]) {
         objectsToSave.forEach { saveAndReplaceIfNeeded($0) }
         update()
     }
