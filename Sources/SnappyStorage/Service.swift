@@ -17,6 +17,7 @@ protocol Servicable {
     func save(_ objectToSave: T)
     func save(_ objectsToSave: Set<T>)
     func delete(_ objectToDelete: T)
+    func delete(_ objectsToDelete: Set<T>)
 }
 
 open class Service<T: Storable>: Servicable {
@@ -50,6 +51,11 @@ open class Service<T: Storable>: Servicable {
     
     open func delete(_ objectToDelete: T) {
         collection.remove(objectToDelete)
+        update()
+    }
+    
+    open func delete(_ objectsToDelete: Set<T>) {
+        objectsToDelete.forEach { collection.remove($0) }
         update()
     }
     
