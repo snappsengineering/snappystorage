@@ -14,7 +14,7 @@ struct StoredObject: Storable {
         objectID
     }
     
-    var objectID: String = HexGenerator.generateHexID()
+    var objectID: String = StoredObject.generateHexID()
     var key: String
 }
 
