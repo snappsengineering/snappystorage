@@ -38,7 +38,7 @@ open class Service<T: Storable>: Servicable {
         return collection.filter { $0.id == fetchID }.first
     }
     
-    public func save(_ objectToSave: T) {
+    open func save(_ objectToSave: T) {
         saveAndReplaceIfNeeded(objectToSave)
         update()
     }
@@ -48,17 +48,17 @@ open class Service<T: Storable>: Servicable {
         update()
     }
     
+    open func delete(_ objectToDelete: T) {
+        collection.removeAll(where: { $0.id == objectToDelete.id })
+        update()
+    }
+    
     func saveAndReplaceIfNeeded(_ objectToSave: T) {
         if let index = collection.firstIndex(where: { $0.id == objectToSave.id }) {
             collection[index] = objectToSave
         } else {
             collection.append(objectToSave)
         }
-    }
-    
-    public func delete(_ objectToDelete: T) {
-        collection.removeAll(where: { $0.id == objectToDelete.id })
-        update()
     }
     
     func update() {
