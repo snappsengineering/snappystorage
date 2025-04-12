@@ -36,7 +36,7 @@ public class Storage<T: Storable> {
 
     }
 
-    func store(collection: [T]) {
+    func store(collection: Set<T>) {
         
         guard let storageURL
         else { return }
@@ -50,7 +50,7 @@ public class Storage<T: Storable> {
 
     }
     
-    func fetch() -> [T] {
+    func fetch() -> Set<T> {
         
         guard let storageURL,
               fileExists
@@ -60,7 +60,7 @@ public class Storage<T: Storable> {
             let jsonData = try Data(contentsOf: storageURL)
             print("File contents:")
             print(String(data: jsonData, encoding: .utf8) ?? "Unable to print file contents")
-            return try jsonDecoder.decode([T].self, from: jsonData)
+            return try jsonDecoder.decode(Set<T>.self, from: jsonData)
         } catch {
             print("Error decoding data: \(error.localizedDescription)")
             return []

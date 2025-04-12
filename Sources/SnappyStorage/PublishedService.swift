@@ -8,7 +8,7 @@
 import Combine
 
 open class PublishedService<T: Storable>: Service<T> {
-    @Published public var collectionPublisher: [T] = []
+    @Published public var collectionPublisher: Set<T> = []
     
     private var cancellables = Set<AnyCancellable>()
     
@@ -22,7 +22,7 @@ open class PublishedService<T: Storable>: Service<T> {
         self.collectionPublisher = self.collection
     }
     
-    open override func save(_ objectsToSave: [T]) {
+    open override func save(_ objectsToSave: Set<T>) {
         super.save(objectsToSave)
         self.collectionPublisher = self.collection
     }

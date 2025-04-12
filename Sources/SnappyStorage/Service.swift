@@ -8,14 +8,14 @@
 import Foundation
 
 protocol Servicable {
-    associatedtype T
+    associatedtype T: Storable
     
-    var collection: [T] { get set }
+    var collection: Set<T> { get set }
     
-    func refreshCollection() -> [T]
+    func refreshCollection() -> Set<T>
     func fetch(with fetchID: String) -> T?
     func save(_ objectToSave: T)
-    func save(_ objectsToSave: [T])
+    func save(_ objectsToSave: Set<T>)
     func delete(_ objectToDelete: T)
 }
 
@@ -23,14 +23,14 @@ open class Service<T: Storable>: Servicable {
 
     private var storage: Storage<T>
     
-    public var collection: [T]
+    public var collection: Set<T>
     
     public init(destination: Destination<T> = .local(.documentDirectory)) {
         self.storage = Storage<T>(destination: destination)
         self.collection = storage.fetch()
     }
     
-    public func refreshCollection() -> [T] {
+    public func refreshCollection() -> Set<T> {
         return collection
     }
     
@@ -43,22 +43,18 @@ open class Service<T: Storable>: Servicable {
         update()
     }
     
-    open func save(_ objectsToSave: [T]) {
+    open func save(_ objectsToSave: Set<T>) {
         objectsToSave.forEach { saveAndReplaceIfNeeded($0) }
         update()
     }
     
     open func delete(_ objectToDelete: T) {
-        collection.removeAll(where: { $0.id == objectToDelete.id })
+        collection.remove(objectToDelete)
         update()
     }
     
     func saveAndReplaceIfNeeded(_ objectToSave: T) {
-        if let index = collection.firstIndex(where: { $0.id == objectToSave.id }) {
-            collection[index] = objectToSave
-        } else {
-            collection.append(objectToSave)
-        }
+        collection.update(with: objectToSave)
     }
     
     func update() {

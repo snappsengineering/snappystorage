@@ -7,7 +7,7 @@
 
 import Foundation
 
-public protocol Storable: Equatable, Codable, Identifiable {
+public protocol Storable: Codable, Hashable, Identifiable {
     var id: String { get }
 }
 
@@ -17,6 +17,12 @@ extension Storable {
         return String(format: "%0\(length)X", randomValue)
     }
     
+    // Conformance to Hashable
+    public func hash(into hasher: inout Hasher) {
+        hasher.combine(id) // Use the id property to generate the hash
+    }
+    
+    // Conformance to Equatable
     public static func == (lhs: Self, rhs: Self) -> Bool {
         lhs.id == rhs.id
     }
