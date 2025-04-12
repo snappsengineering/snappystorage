@@ -7,7 +7,7 @@
 
 import Combine
 
-public class PublishedService<T: Storable>: Service<T> {
+open class PublishedService<T: Storable>: Service<T> {
     @Published private(set) var collectionPublisher: [T] = []
     
     private var cancellables = Set<AnyCancellable>()
