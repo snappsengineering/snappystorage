@@ -12,7 +12,7 @@ open class PublishedService<T: Storable>: Service<T> {
     
     private var cancellables = Set<AnyCancellable>()
     
-    init() {
+    public init() {
         super.init()
         self.collectionPublisher = self.collection
     }
