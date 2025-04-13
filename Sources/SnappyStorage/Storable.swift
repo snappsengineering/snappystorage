@@ -8,7 +8,7 @@
 import Foundation
 
 public protocol Storable: Codable, Hashable, Identifiable {
-    var id: String { get }
+    var id: ID { get }
 }
 
 extension Storable {
