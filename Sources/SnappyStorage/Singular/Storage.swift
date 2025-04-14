@@ -9,7 +9,6 @@ import Foundation
 
 public class Storage<T: Storable> {
     
-    
     private let jsonDecoder: JSONDecoder
     private let jsonEncoder: JSONEncoder
     private let fileManager: FileManager

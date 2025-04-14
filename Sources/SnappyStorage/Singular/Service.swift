@@ -14,8 +14,8 @@ protocol Servicable {
     var collection: Set<T> { get set }
     
     func load()
-    func fetch(for id: String) -> Set<T>
-    func fetch(for keys: [String]) -> Set<T>
+    func fetch(for id: ObjectID) -> Set<T>
+    func fetch(for keys: [ObjectID]) -> Set<T>
     func save(_ objectToSave: T)
     func save(_ objectsToSave: Set<T>)
     func delete(_ objectToDelete: T)
@@ -36,11 +36,11 @@ open class Service<T: Storable>: Servicable {
         self.collection = storage.fetch()
     }
     
-    open func fetch(for id: String) -> Set<T> {
+    open func fetch(for id: ObjectID) -> Set<T> {
         return collection.filter({ $0.id == id })
     }
     
-    open func fetch(for keys: [String]) -> Set<T> {
+    open func fetch(for keys: [ObjectID]) -> Set<T> {
         return Set(keys.flatMap { fetch(for: $0) })
     }
     

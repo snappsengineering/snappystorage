@@ -14,8 +14,8 @@ public protocol Relationship<T, U>: Storable {
     var type: RelationshipType<T, U> { get }
 }
 
-public enum RelationshipType<T: Storable, U: Storable> {
-    case oneToOne(T.ID, U.ID)
-    case oneToMany(T.ID, [U.ID])
-    case manyToMany([T.ID], [U.ID])
+public enum RelationshipType<T: Storable, U: Storable>: Codable {
+    case oneToOne(tID: ObjectID, uID: ObjectID)
+    case oneToMany(tID: ObjectID, uIDs: [ObjectID])
+    case manyToMany(tIDs: [ObjectID], uIDs: [ObjectID])
 }
