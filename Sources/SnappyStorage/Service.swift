@@ -15,7 +15,8 @@ protocol Servicable {
     
     func load()
     func fetch(for id: T.ID) -> T?
-    func fetch(for keys: [T.ID]) -> [T]
+    func fetch(for id: T.ID) -> Set<T>
+    func fetch(for keys: [T.ID]) -> Set<T>
     func save(_ objectToSave: T)
     func save(_ objectsToSave: Set<T>)
     func delete(_ objectToDelete: T)
@@ -40,8 +41,12 @@ open class Service<T: Storable>: Servicable {
         return collection.first(where: { $0.id == id })
     }
     
-    open func fetch(for keys: [T.ID]) -> [T] {
-        return keys.compactMap { fetch(for: $0) }
+    open func fetch(for id: T.ID) -> Set<T> {
+        return collection.filter({ $0.id == id })
+    }
+    
+    open func fetch(for keys: [T.ID]) -> Set<T> {
+        return Set(keys.compactMap { fetch(for: $0) })
     }
     
     open func save(_ objectToSave: T) {
