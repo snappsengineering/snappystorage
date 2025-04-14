@@ -34,9 +34,9 @@ class ServiceTests: XCTestCase {
         
         service.save(storedObject)
         
-        let fetchedObject = service.fetch(for: storedObject.objectID)
+        let fetchedObject = service.fetch(for: storedObject.id)
         XCTAssertNotNil(fetchedObject)
-        XCTAssertEqual(fetchedObject?.key as? String, "value")
+        XCTAssertEqual(fetchedObject.first?.key as? String, "value")
     }
     
     func testSaveMultipleObjects() {
@@ -48,11 +48,11 @@ class ServiceTests: XCTestCase {
         service.load()
         XCTAssertEqual(service.collection.count, 2)
         
-        let fetchedObject1 = service.fetch(for: storedObject1.objectID)
-        let fetchedObject2 = service.fetch(for: storedObject2.objectID)
+        let fetchedObject1 = service.fetch(for: storedObject1.id)
+        let fetchedObject2 = service.fetch(for: storedObject2.id)
         
-        XCTAssertEqual(fetchedObject1?.key as? String, "value1")
-        XCTAssertEqual(fetchedObject2?.key as? String, "value2")
+        XCTAssertEqual(fetchedObject1.first?.key as? String, "value1")
+        XCTAssertEqual(fetchedObject2.first?.key as? String, "value2")
     }
     
     func testDeleteObject() {
@@ -61,8 +61,8 @@ class ServiceTests: XCTestCase {
         
         service.delete(storedObject)
         
-        let fetchedObject = service.fetch(for: storedObject.objectID)
-        XCTAssertNil(fetchedObject)
+        let fetchedObjects = service.fetch(for: storedObject.id)
+        XCTAssertTrue(fetchedObjects.isEmpty)
     }
     
     func testSaveAndReplaceIfNeeded() {
@@ -73,8 +73,8 @@ class ServiceTests: XCTestCase {
         storedObject.key = "newValue"
         service.save(storedObject)
         
-        let fetchedObject = service.fetch(for: storedObject.objectID)
-        XCTAssertEqual(fetchedObject?.key as? String, "newValue")
+        let fetchedObjects = service.fetch(for: storedObject.id)
+        XCTAssertEqual(fetchedObjects.first?.key as? String, "newValue")
     }
     
     func testUpdate() {
@@ -82,9 +82,9 @@ class ServiceTests: XCTestCase {
         
         service.save(storedObject)
         
-        let fetchedObject = service.fetch(for: storedObject.objectID)
-        XCTAssertNotNil(fetchedObject)
-        XCTAssertEqual(fetchedObject?.key as? String, "value")
+        let fetchedObjects = service.fetch(for: storedObject.id)
+        XCTAssertNotNil(fetchedObjects)
+        XCTAssertEqual(fetchedObjects.first?.key as? String, "value")
     }
     
     func testSaveAndReplaceIfNeededNewObject() {
@@ -97,10 +97,10 @@ class ServiceTests: XCTestCase {
         service.load()
         XCTAssertEqual(service.collection.count, 2)
         
-        let fetchedObject1 = service.fetch(for: storedObject1.objectID)
-        let fetchedObject2 = service.fetch(for: storedObject2.objectID)
+        let fetchedObject1 = service.fetch(for: storedObject1.id)
+        let fetchedObject2 = service.fetch(for: storedObject2.id)
         
-        XCTAssertEqual(fetchedObject1?.key as? String, "value1")
-        XCTAssertEqual(fetchedObject2?.key as? String, "value2")
+        XCTAssertEqual(fetchedObject1.first?.key as? String, "value1")
+        XCTAssertEqual(fetchedObject2.first?.key as? String, "value2")
     }
 }

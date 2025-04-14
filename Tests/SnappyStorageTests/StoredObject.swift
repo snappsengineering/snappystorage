@@ -9,13 +9,13 @@ import XCTest
 @testable import SnappyStorage
 
 struct StoredObject: Storable {
-    
-    var id: String {
-        objectID
-    }
-    
-    var objectID: String = StoredObject.generateHexID()
+    var id: String
     var key: String
+    
+    init(key: String) {
+        self.id = Self.generateHexID()
+        self.key = key
+    }
 }
 
 extension StoredObject {
