@@ -9,13 +9,8 @@ import XCTest
 @testable import SnappyStorage
 
 struct StoredObject: Storable {
-    var id: ObjectID
+    var id = ObjectID()
     var key: String
-    
-    init(key: String) {
-        self.id = ObjectID.make()
-        self.key = key
-    }
 }
 
 extension StoredObject {
