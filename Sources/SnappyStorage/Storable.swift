@@ -44,7 +44,7 @@ extension StoredObject: Equatable {
 
 extension StoredObject {
     public var objectID: String {
-        get { (attributes[.objectID] as? String)! }
+        get { (attributes[.objectID] as? String) ?? UUID().uuidString }
         set { attributes[.objectID] = newValue }
     }
 }

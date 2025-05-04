@@ -69,9 +69,6 @@ open class Service<T: StoredObject>: Servicable {
     func update() {
         self.storage.store(collection: self.collection)
         self.collection = self.storage.fetch()
-        
-        guard isICloudEnabled, let cloud else { return }
-        cloud.store(collection: collection)
     }
     
     // MARK: iCloud
