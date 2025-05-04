@@ -22,14 +22,22 @@ protocol Servicable {
 open class Service<T: StoredObject>: Servicable {
     
     private var storage: Storage<T>
-    private var cloud: Storage<T>
+    private var cloud: Storage<T>?
+    private var isICloudEnabled: Bool
     
     public var collection: [T]
     
-    public init() {
+    public init(isICloudEnabled: Bool = false) {
         self.storage = Storage<T>(type: .local)
-        self.cloud = Storage<T>(type: .cloud)
         self.collection = storage.fetch()
+        self.isICloudEnabled = isICloudEnabled
+        
+        guard isICloudEnabled else { return }
+        self.cloud = Storage<T>(type: .cloud)
+        
+        if collection.isEmpty {
+            fetchFromiCloud()
+        }
     }
     
     public func refreshCollection() -> [T] {
@@ -66,16 +74,21 @@ open class Service<T: StoredObject>: Servicable {
     func update() {
         self.storage.store(collection: self.collection)
         self.collection = self.storage.fetch()
+        
+        guard isICloudEnabled else { return }
+        storeToiCloud()
     }
     
     // MARK: iCloud
     
     public func fetchFromiCloud() {
+        guard isICloudEnabled, let cloud else { return }
         let cloudCollection = cloud.fetch()
         save(cloudCollection)
     }
     
     public func storeToiCloud() {
+        guard isICloudEnabled, let cloud else { return }
         cloud.store(collection: collection)
     }
 }
