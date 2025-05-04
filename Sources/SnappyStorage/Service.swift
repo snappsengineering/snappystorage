@@ -69,21 +69,27 @@ open class Service<T: StoredObject>: Servicable {
     func update() {
         self.storage.store(collection: self.collection)
         self.collection = self.storage.fetch()
-        
-        guard isICloudEnabled else { return }
-        storeToiCloud()
     }
     
     // MARK: iCloud
     
-    public func fetchFromiCloud() {
+    public func fetchFromiCloud(callBack: @escaping () -> Void) {
         guard isICloudEnabled, let cloud else { return }
         let cloudCollection = cloud.fetch()
-        save(cloudCollection)
+        
+        // If there are entries locally but not in iCloud, go ahead and store them in iCloud
+        
+        if cloudCollection.isEmpty {
+            storeToiCloud {
+                callBack()
+            }
+        }
+        callBack()
     }
     
-    public func storeToiCloud() {
+    public func storeToiCloud(callBack: @escaping () -> Void) {
         guard isICloudEnabled, let cloud else { return }
         cloud.store(collection: collection)
+        callBack()
     }
 }
