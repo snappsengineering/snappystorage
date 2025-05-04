@@ -25,23 +25,18 @@ open class Service<T: StoredObject>: Servicable {
     private var cloud: Storage<T>?
     private var isICloudEnabled: Bool
     
-    public var collection: [T]
+    public var collection: [T] = []
     
     public init(isICloudEnabled: Bool) {
         self.storage = Storage<T>(type: .local)
-        self.collection = storage.fetch()
         self.isICloudEnabled = isICloudEnabled
         
         guard isICloudEnabled else { return }
         self.cloud = Storage<T>(type: .cloud)
-        
-        if collection.isEmpty {
-            fetchFromiCloud()
-        }
     }
     
     public func refreshCollection() -> [T] {
-        return collection
+        return storage.fetch()
     }
     
     func fetch(with fetchID: String) -> T? {
