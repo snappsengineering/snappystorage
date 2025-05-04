@@ -7,7 +7,19 @@
 
 import Foundation
 
+public enum StorageType: String {
+    case local
+    case cloud
+}
+
 public class Storage<T: Storable> {
+    
+    let storageType: StorageType
+    
+    init(type: StorageType = .local) {
+        self.storageType = type
+    }
+    
     func fetch() -> [T] {
         guard let fileURL = getFilePath() else { return [] }
         return fetchFrom(fileURL: fileURL) ?? []
@@ -43,7 +55,16 @@ public class Storage<T: Storable> {
     
     func getFilePath() -> URL? {
         let fileManager = FileManager.default
-        let storeURL = try? fileManager.url(for: .documentDirectory, in: .userDomainMask, appropriateFor: nil, create: true)
+        
+        let storeURL: URL?
+        
+        switch self.storageType {
+        case .local:
+            storeURL = try? fileManager.url(for: .documentDirectory, in: .userDomainMask, appropriateFor: nil, create: true)
+        case .cloud:
+            storeURL = fileManager.url(forUbiquityContainerIdentifier: nil)?.appendingPathComponent("Documents")
+        }
+        
         return storeURL?.appendingPathComponent(fileName)
     }
     
