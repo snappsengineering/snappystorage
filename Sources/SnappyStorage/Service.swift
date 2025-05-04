@@ -81,7 +81,7 @@ open class Service<T: StoredObject>: Servicable {
         let cloudCollection = cloud.fetch()
         
         if collection.isEmpty {
-            collection = cloudCollection
+            save(cloudCollection)
         }
         callBack()
     }
