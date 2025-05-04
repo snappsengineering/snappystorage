@@ -36,6 +36,7 @@ public class Storage<T: Storable> {
         let jsonDecoder = JSONDecoder()
         do {
             let jsonData = try Data(contentsOf: fileURL)
+            guard !jsonData.isEmpty else { return nil }
             return try jsonDecoder.decode([T].self, from: jsonData)
         } catch {
             print("Error decoding data: \(error.localizedDescription)")
@@ -44,6 +45,7 @@ public class Storage<T: Storable> {
     }
     
     func writeTo(fileURL: URL, collection: [T]) {
+        guard !collection.isEmpty else { return }
         let jsonEncoder = JSONEncoder()
         do {
             let jsonData = try jsonEncoder.encode(collection)
