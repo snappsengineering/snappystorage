@@ -36,7 +36,7 @@ open class Service<T: StoredObject>: Servicable {
     }
     
     public func refreshCollection() -> [T] {
-        return storage.fetch()
+        return collection
     }
     
     func fetch(with fetchID: String) -> T? {
