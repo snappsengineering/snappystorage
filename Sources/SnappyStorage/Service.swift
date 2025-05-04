@@ -22,11 +22,13 @@ protocol Servicable {
 open class Service<T: StoredObject>: Servicable {
     
     private var storage: Storage<T>
+    private var cloud: Storage<T>
     
     public var collection: [T]
     
-    public init(storageType: StorageType = .local) {
-        self.storage = Storage<T>(type: storageType)
+    public init() {
+        self.storage = Storage<T>(type: .local)
+        self.cloud = Storage<T>(type: .cloud)
         self.collection = storage.fetch()
     }
     
@@ -64,5 +66,16 @@ open class Service<T: StoredObject>: Servicable {
     func update() {
         self.storage.store(collection: self.collection)
         self.collection = self.storage.fetch()
+    }
+    
+    // MARK: iCloud
+    
+    public func fetchFromiCloud() {
+        let cloudCollection = cloud.fetch()
+        save(cloudCollection)
+    }
+    
+    public func storeToiCloud() {
+        cloud.store(collection: collection)
     }
 }
