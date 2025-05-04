@@ -27,7 +27,7 @@ open class Service<T: StoredObject>: Servicable {
     
     public var collection: [T] = []
     
-    public init(isICloudEnabled: Bool) {
+    public init(isICloudEnabled: Bool = false) {
         self.storage = Storage<T>(type: .local)
         self.isICloudEnabled = isICloudEnabled
         

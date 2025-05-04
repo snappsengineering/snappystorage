@@ -69,6 +69,6 @@ public class Storage<T: Storable> {
     }
     
     var fileName: String {
-        return "\(T.self)"
+        return "\(T.self).json"
     }
 }
