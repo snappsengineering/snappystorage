@@ -23,7 +23,6 @@ open class Service<T: Storable>: Servicable {
 
     private var storage: Storage<T>
     private var cloud: Storage<T>?
-    private var isICloudEnabled: Bool
 
     public var collection: Set<T>
     
@@ -62,17 +61,5 @@ open class Service<T: Storable>: Servicable {
     func update() {
         self.storage.store(collection: self.collection)
         self.collection = self.storage.fetch()
-    }
-    
-    // MARK: iCloud
-    
-    public func fetchFromiCloud(callBack: @escaping () -> Void) {
-        guard isICloudEnabled, let cloud else { return }
-        let cloudCollection = cloud.fetch()
-        
-        if collection.isEmpty {
-            save(cloudCollection)
-        }
-        callBack()
     }
 }
