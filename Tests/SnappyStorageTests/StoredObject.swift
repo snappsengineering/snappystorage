@@ -1,0 +1,33 @@
+//
+//  StoredObject.swift
+//  SnappyStorage
+//
+//  Created by Shane on 2025-04-08.
+//
+
+import XCTest
+@testable import SnappyStorage
+
+struct StoredObject: Storable {
+    
+    var id: String {
+        objectID
+    }
+    
+    var objectID: String = StoredObject.generateHexID()
+    var key: String
+}
+
+extension StoredObject {
+    static var value: StoredObject {
+        .init(key: "value")
+    }
+
+    static var value1: StoredObject {
+        .init(key: "value1")
+    }
+
+    static var value2: StoredObject {
+        .init(key: "value2")
+    }
+}

@@ -7,70 +7,64 @@
 
 import Foundation
 
-public enum StorageType: String {
-    case local
-    case cloud
-}
-
 public class Storage<T: Storable> {
     
-    let storageType: StorageType
     
-    init(type: StorageType = .local) {
-        self.storageType = type
+    private let jsonDecoder: JSONDecoder
+    private let jsonEncoder: JSONEncoder
+    private let fileManager: FileManager
+    
+    private var storageURL: URL?
+    
+    var fileExists: Bool {
+        guard let path = storageURL?.path else { return false }
+        return fileManager.fileExists(atPath: path)
     }
     
-    func fetch() -> [T] {
-        guard let fileURL = getFilePath() else { return [] }
-        return fetchFrom(fileURL: fileURL) ?? []
+    init(
+        jsonDecoder: JSONDecoder = JSONDecoder(),
+        jsonEncoder: JSONEncoder = JSONEncoder(),
+        fileManager: FileManager = .default,
+        destination: Destination<T>
+    ) {
+
+        self.jsonDecoder = jsonDecoder
+        self.jsonEncoder = jsonEncoder
+        self.fileManager = fileManager
+
+        self.storageURL = destination.makeURL(with: fileManager)
+
     }
 
-    func store(collection: [T]) {
-        guard let fileURL = getFilePath() else { return }
-        writeTo(fileURL: fileURL, collection: collection)
-    }
-    
-    func fetchFrom(fileURL: URL) -> [T]? {
-        let fileManager = FileManager.default
-        guard fileManager.fileExists(atPath: fileURL.path) else { return nil }
-        let jsonDecoder = JSONDecoder()
-        do {
-            let jsonData = try Data(contentsOf: fileURL)
-            guard !jsonData.isEmpty else { return nil }
-            return try jsonDecoder.decode([T].self, from: jsonData)
-        } catch {
-            print("Error decoding data: \(error.localizedDescription)")
-            return nil
-        }
-    }
-    
-    func writeTo(fileURL: URL, collection: [T]) {
-        guard !collection.isEmpty else { return }
-        let jsonEncoder = JSONEncoder()
+    func store(collection: Set<T>) {
+        
+        guard let storageURL
+        else { return }
+        
         do {
             let jsonData = try jsonEncoder.encode(collection)
-            try jsonData.write(to: fileURL, options: .atomic)
+            try jsonData.write(to: storageURL, options: .atomic)
         } catch {
             print("Error writing data: \(error.localizedDescription)")
         }
+
     }
     
-    func getFilePath() -> URL? {
-        let fileManager = FileManager.default
+    func fetch() -> Set<T> {
         
-        let storeURL: URL?
+        guard let storageURL,
+              fileExists
+        else { return [] }
         
-        switch self.storageType {
-        case .local:
-            storeURL = try? fileManager.url(for: .documentDirectory, in: .userDomainMask, appropriateFor: nil, create: true)
-        case .cloud:
-            storeURL = fileManager.url(forUbiquityContainerIdentifier: nil)?.appendingPathComponent("Documents")
+        do {
+            let jsonData = try Data(contentsOf: storageURL)
+            print("File contents:")
+            print(String(data: jsonData, encoding: .utf8) ?? "Unable to print file contents")
+            return try jsonDecoder.decode(Set<T>.self, from: jsonData)
+        } catch {
+            print("Error decoding data: \(error.localizedDescription)")
+            return []
         }
         
-        return storeURL?.appendingPathComponent(fileName)
-    }
-    
-    var fileName: String {
-        return "\(T.self).json"
     }
 }

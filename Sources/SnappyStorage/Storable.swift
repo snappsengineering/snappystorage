@@ -7,48 +7,23 @@
 
 import Foundation
 
-public protocol Storable: ObservableObject, Equatable, Codable, Identifiable {
-    var attributes: [String: Any] { get set }
+public protocol Storable: Codable, Hashable, Identifiable {
+    var id: String { get }
 }
 
-open class StoredObject: Storable  {
-    public var id: String { objectID }
-    public var attributes: [String : Any] = [:]
-    
-    public init() {
-        objectID = UUID().uuidString
+extension Storable {
+    public static func generateHexID(length: Int = 6) -> String {
+        let randomValue = Int.random(in: 0...(16_777_215)) // 16_777_215 is the decimal value of FFFFFF
+        return String(format: "%0\(length)X", randomValue)
     }
     
-    public required init(from decoder: Decoder) throws {
-        let values = try decoder.container(keyedBy: CodingKeys.self)
-        let data = try values.decode(Data.self, forKey: .attributes)
-        attributes = try JSONSerialization.jsonObject(with: data, options: []) as! [String: Any]
+    // Conformance to Hashable
+    public func hash(into hasher: inout Hasher) {
+        hasher.combine(id) // Use the id property to generate the hash
     }
     
-    enum CodingKeys: String, CodingKey {
-        case attributes
+    // Conformance to Equatable
+    public static func == (lhs: Self, rhs: Self) -> Bool {
+        lhs.id == rhs.id
     }
-
-    open func encode(to encoder: Encoder) throws {
-        var container = encoder.container(keyedBy: CodingKeys.self)
-        let data = try JSONSerialization.data(withJSONObject: attributes, options: [])
-        try container.encode(data, forKey: .attributes)
-    }
-}
-
-extension StoredObject: Equatable {
-    public static func == (lhs: StoredObject, rhs: StoredObject) -> Bool{
-        return lhs.objectID == rhs.objectID
-    }
-}
-
-extension StoredObject {
-    public var objectID: String {
-        get { (attributes[.objectID] as? String) ?? UUID().uuidString }
-        set { attributes[.objectID] = newValue }
-    }
-}
-
-private extension String {
-    static let objectID = "objectID"
 }

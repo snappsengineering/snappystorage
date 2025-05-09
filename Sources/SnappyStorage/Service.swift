@@ -2,68 +2,61 @@
 //  Service.swift
 //  snappystorage
 //
-//  Created by Shane Noormohamed on 12/25/23.
+//  Created by snapps engineering ltd.
 //
 
 import Foundation
 
 protocol Servicable {
-    associatedtype T
+    associatedtype T: Storable
     
-    var collection: [T] { get set }
+    var collection: Set<T> { get set }
     
-    func refreshCollection() -> [T]
+    func refreshCollection() -> Set<T>
     func fetch(with fetchID: String) -> T?
     func save(_ objectToSave: T)
-    func save(_ objectsToSave: [T])
+    func save(_ objectsToSave: Set<T>)
     func delete(_ objectToDelete: T)
 }
 
-open class Service<T: StoredObject>: Servicable {
-    
+open class Service<T: Storable>: Servicable {
+
     private var storage: Storage<T>
     private var cloud: Storage<T>?
     private var isICloudEnabled: Bool
+
+    public var collection: Set<T>
     
-    public var collection: [T] = []
-    
-    public init(isICloudEnabled: Bool = false) {
-        self.storage = Storage<T>(type: .local)
-        self.isICloudEnabled = isICloudEnabled
-        
-        guard isICloudEnabled else { return }
-        self.cloud = Storage<T>(type: .cloud)
+    public init(destination: Destination<T> = .local(.documentDirectory)) {
+        self.storage = Storage<T>(destination: destination)
+        self.collection = storage.fetch()
     }
     
-    public func refreshCollection() -> [T] {
-        return storage.fetch()
+    public func refreshCollection() -> Set<T> {
+        return collection
     }
     
     func fetch(with fetchID: String) -> T? {
-        return collection.filter { $0.objectID == fetchID }.first
+        return collection.filter { $0.id == fetchID }.first
     }
     
-    public func save(_ objectToSave: T) {
+    open func save(_ objectToSave: T) {
         saveAndReplaceIfNeeded(objectToSave)
         update()
     }
     
-    public func save(_ objectsToSave: [T]) {
+    open func save(_ objectsToSave: Set<T>) {
         objectsToSave.forEach { saveAndReplaceIfNeeded($0) }
         update()
     }
     
-    func saveAndReplaceIfNeeded(_ objectToSave: T) {
-        if let index = collection.firstIndex(where: { $0 == objectToSave }) {
-            collection[index] = objectToSave
-        } else {
-            collection.append(objectToSave)
-        }
+    open func delete(_ objectToDelete: T) {
+        collection.remove(objectToDelete)
+        update()
     }
     
-    public func delete(_ objectToDelete: T) {
-        collection.removeAll(where: { $0 == objectToDelete })
-        update()
+    func saveAndReplaceIfNeeded(_ objectToSave: T) {
+        collection.update(with: objectToSave)
     }
     
     func update() {
