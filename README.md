@@ -1,5 +1,13 @@
 **snappystorage**
 
+🔨 README Under construction!
+More detailed use cases coming soon to include:
+- Dependency injection
+- Combine Publishing
+- CRUD usage
+
+Main idea is to create a *Service* or *PubilishedService* subclass and create a **Storable** Model
+
 Usage:
 
 Define a model
