@@ -8,6 +8,8 @@ More detailed use cases coming soon to include:
 
 Main idea is to create a *Service* or *PubilishedService* subclass and create a **Storable** Model
 
+Note: iCloud integration in the works!
+
 Usage:
 
 Define a model
