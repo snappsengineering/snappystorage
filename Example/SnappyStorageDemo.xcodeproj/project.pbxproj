@@ -1,0 +1,385 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		AABF000000000000AABF0001 /* SnappyStorageDemoApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = AABF000000000000AABF0011 /* SnappyStorageDemoApp.swift */; };
+		AABF000000000000AABF0002 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AABF000000000000AABF0012 /* ContentView.swift */; };
+		AABF000000000000AABF0003 /* SyncDemoView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AABF000000000000AABF0013 /* SyncDemoView.swift */; };
+		AABF000000000000AABF0004 /* CombineDemoView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AABF000000000000AABF0014 /* CombineDemoView.swift */; };
+		AABF000000000000AABF0005 /* AsyncDemoView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AABF000000000000AABF0015 /* AsyncDemoView.swift */; };
+		AABF000000000000AABF0006 /* EncryptionDemoView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AABF000000000000AABF0016 /* EncryptionDemoView.swift */; };
+		AABF000000000000AABF0007 /* Note.swift in Sources */ = {isa = PBXBuildFile; fileRef = AABF000000000000AABF0017 /* Note.swift */; };
+		AABF000000000000AABF0008 /* UserPreferences.swift in Sources */ = {isa = PBXBuildFile; fileRef = AABF000000000000AABF0018 /* UserPreferences.swift */; };
+		AABF000000000000AABF0009 /* Photo.swift in Sources */ = {isa = PBXBuildFile; fileRef = AABF000000000000AABF0019 /* Photo.swift */; };
+		AABF000000000000AABF000A /* SnappyStorage in Frameworks */ = {isa = PBXBuildFile; productRef = AABF000000000000AABF0061 /* SnappyStorage */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		AABF000000000000AABF0010 /* SnappyStorageDemo.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = SnappyStorageDemo.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		AABF000000000000AABF0011 /* SnappyStorageDemoApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SnappyStorageDemoApp.swift; sourceTree = "<group>"; };
+		AABF000000000000AABF0012 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		AABF000000000000AABF0013 /* SyncDemoView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncDemoView.swift; sourceTree = "<group>"; };
+		AABF000000000000AABF0014 /* CombineDemoView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CombineDemoView.swift; sourceTree = "<group>"; };
+		AABF000000000000AABF0015 /* AsyncDemoView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AsyncDemoView.swift; sourceTree = "<group>"; };
+		AABF000000000000AABF0016 /* EncryptionDemoView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EncryptionDemoView.swift; sourceTree = "<group>"; };
+		AABF000000000000AABF0017 /* Note.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Note.swift; sourceTree = "<group>"; };
+		AABF000000000000AABF0018 /* UserPreferences.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserPreferences.swift; sourceTree = "<group>"; };
+		AABF000000000000AABF0019 /* Photo.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Photo.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		AABF000000000000AABF0021 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				AABF000000000000AABF000A /* SnappyStorage in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		AABF000000000000AABF0030 = {
+			isa = PBXGroup;
+			children = (
+				AABF000000000000AABF0032 /* SnappyStorageDemo */,
+				AABF000000000000AABF0031 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		AABF000000000000AABF0031 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				AABF000000000000AABF0010 /* SnappyStorageDemo.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		AABF000000000000AABF0032 /* SnappyStorageDemo */ = {
+			isa = PBXGroup;
+			children = (
+				AABF000000000000AABF0011 /* SnappyStorageDemoApp.swift */,
+				AABF000000000000AABF0012 /* ContentView.swift */,
+				AABF000000000000AABF0033 /* Features */,
+				AABF000000000000AABF0034 /* Models */,
+			);
+			path = SnappyStorageDemo;
+			sourceTree = "<group>";
+		};
+		AABF000000000000AABF0033 /* Features */ = {
+			isa = PBXGroup;
+			children = (
+				AABF000000000000AABF0013 /* SyncDemoView.swift */,
+				AABF000000000000AABF0014 /* CombineDemoView.swift */,
+				AABF000000000000AABF0015 /* AsyncDemoView.swift */,
+				AABF000000000000AABF0016 /* EncryptionDemoView.swift */,
+			);
+			path = Features;
+			sourceTree = "<group>";
+		};
+		AABF000000000000AABF0034 /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				AABF000000000000AABF0017 /* Note.swift */,
+				AABF000000000000AABF0018 /* UserPreferences.swift */,
+				AABF000000000000AABF0019 /* Photo.swift */,
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		AABF000000000000AABF0040 /* SnappyStorageDemo */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = AABF000000000000AABF0055 /* Build configuration list for PBXNativeTarget "SnappyStorageDemo" */;
+			buildPhases = (
+				AABF000000000000AABF0020 /* Sources */,
+				AABF000000000000AABF0021 /* Frameworks */,
+				AABF000000000000AABF0022 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = SnappyStorageDemo;
+			packageProductDependencies = (
+				AABF000000000000AABF0061 /* SnappyStorage */,
+			);
+			productName = SnappyStorageDemo;
+			productReference = AABF000000000000AABF0010 /* SnappyStorageDemo.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		AABF000000000000AABF0041 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 1600;
+				LastUpgradeCheck = 1600;
+			};
+			buildConfigurationList = AABF000000000000AABF0054 /* Build configuration list for PBXProject "SnappyStorageDemo" */;
+			compatibilityVersion = "Xcode 14.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = AABF000000000000AABF0030;
+			packageReferences = (
+				AABF000000000000AABF0060 /* XCLocalSwiftPackageReference ".." */,
+			);
+			productRefGroup = AABF000000000000AABF0031 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				AABF000000000000AABF0040 /* SnappyStorageDemo */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		AABF000000000000AABF0022 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		AABF000000000000AABF0020 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				AABF000000000000AABF0001 /* SnappyStorageDemoApp.swift in Sources */,
+				AABF000000000000AABF0002 /* ContentView.swift in Sources */,
+				AABF000000000000AABF0003 /* SyncDemoView.swift in Sources */,
+				AABF000000000000AABF0004 /* CombineDemoView.swift in Sources */,
+				AABF000000000000AABF0005 /* AsyncDemoView.swift in Sources */,
+				AABF000000000000AABF0006 /* EncryptionDemoView.swift in Sources */,
+				AABF000000000000AABF0007 /* Note.swift in Sources */,
+				AABF000000000000AABF0008 /* UserPreferences.swift in Sources */,
+				AABF000000000000AABF0009 /* Photo.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		AABF000000000000AABF0050 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		AABF000000000000AABF0051 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				MTL_FAST_MATH = YES;
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		AABF000000000000AABF0052 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = "";
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_NSCameraUsageDescription = "Take photos for the encryption demo.";
+				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "Select photos for the encryption demo.";
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.example.SnappyStorageDemo;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		AABF000000000000AABF0053 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = "";
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_NSCameraUsageDescription = "Take photos for the encryption demo.";
+				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "Select photos for the encryption demo.";
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.example.SnappyStorageDemo;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		AABF000000000000AABF0054 /* Build configuration list for PBXProject "SnappyStorageDemo" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				AABF000000000000AABF0050 /* Debug */,
+				AABF000000000000AABF0051 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		AABF000000000000AABF0055 /* Build configuration list for PBXNativeTarget "SnappyStorageDemo" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				AABF000000000000AABF0052 /* Debug */,
+				AABF000000000000AABF0053 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+
+/* Begin XCLocalSwiftPackageReference section */
+		AABF000000000000AABF0060 /* XCLocalSwiftPackageReference ".." */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = "..";
+		};
+/* End XCLocalSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		AABF000000000000AABF0061 /* SnappyStorage */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = AABF000000000000AABF0060 /* XCLocalSwiftPackageReference ".." */;
+			productName = SnappyStorage;
+		};
+/* End XCSwiftPackageProductDependency section */
+
+	};
+	rootObject = AABF000000000000AABF0041 /* Project object */;
+}
