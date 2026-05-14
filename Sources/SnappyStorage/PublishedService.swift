@@ -5,7 +5,7 @@ import Combine
 /// Conforms to ObservableObject so subclasses can be used as @StateObject / @ObservedObject.
 open class PublishedService<T: Storable>: Service<T>, ObservableObject {
 
-    @Published public var published: Set<T> = []
+    @Published public var published: [T] = []
 
     public override init(
         destination: Destination = .local(.documentDirectory),
@@ -27,8 +27,13 @@ open class PublishedService<T: Storable>: Service<T>, ObservableObject {
         published = collection
     }
 
-    open override func save(_ items: Set<T>) {
+    open override func save(_ items: [T]) {
         super.save(items)
+        published = collection
+    }
+
+    open override func replace(_ items: [T]) {
+        super.replace(items)
         published = collection
     }
 

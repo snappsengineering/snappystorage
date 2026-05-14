@@ -1,11 +1,12 @@
 import Foundation
 
-/// Manages an in-memory Set<T> backed by file storage. Synchronous, subclassable.
+/// Manages an in-memory [T] backed by file storage. Synchronous, subclassable.
+/// Items are unique by `id` — saving an item with an existing ID replaces it in place.
 open class Service<T: Storable> {
 
     private let storage: Storage
 
-    public private(set) var collection: Set<T>
+    public private(set) var collection: [T]
 
     public init(
         destination: Destination = .local(.documentDirectory),
@@ -27,7 +28,7 @@ open class Service<T: Storable> {
 
     // MARK: - Read
 
-    public func fetchAll() -> Set<T> {
+    public func fetchAll() -> [T] {
         collection
     }
 
@@ -38,17 +39,32 @@ open class Service<T: Storable> {
     // MARK: - Write
 
     open func save(_ item: T) {
-        collection.update(with: item)
+        if let index = collection.firstIndex(where: { $0.id == item.id }) {
+            collection[index] = item
+        } else {
+            collection.append(item)
+        }
         persist()
     }
 
-    open func save(_ items: Set<T>) {
-        items.forEach { collection.update(with: $0) }
+    open func save(_ items: [T]) {
+        for item in items {
+            if let index = collection.firstIndex(where: { $0.id == item.id }) {
+                collection[index] = item
+            } else {
+                collection.append(item)
+            }
+        }
+        persist()
+    }
+
+    open func replace(_ items: [T]) {
+        collection = items
         persist()
     }
 
     open func delete(_ item: T) {
-        collection.remove(item)
+        collection.removeAll { $0.id == item.id }
         persist()
     }
 

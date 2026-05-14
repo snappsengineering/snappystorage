@@ -3,7 +3,7 @@ import SnappyStorage
 
 // Demonstrates the synchronous Service<T> layer.
 //
-// Service<T> is a subclassable class that stores a Set<T> backed by a JSON file.
+// Service<T> is a subclassable class that stores a [T] backed by a JSON file.
 // All reads and writes are synchronous — no callbacks, publishers, or async/await required.
 // Use it directly or subclass it to add domain-specific queries.
 //
@@ -62,8 +62,8 @@ struct SyncDemoView: View {
         reload()
     }
 
-    // fetchAll() returns Set<Note>. Sort for stable display order.
+    // fetchAll() returns [Note] — order is preserved from insertion.
     private func reload() {
-        notes = service.fetchAll().sorted { $0.createdAt < $1.createdAt }
+        notes = service.fetchAll()
     }
 }

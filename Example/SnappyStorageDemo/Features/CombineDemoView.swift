@@ -4,7 +4,7 @@ import SnappyStorage
 
 // Demonstrates the Combine-reactive PublishedService<T> layer.
 //
-// PublishedService<T> subclasses Service<T> and adds a @Published var published: Set<T>.
+// PublishedService<T> subclasses Service<T> and adds a @Published var published: [T].
 // published updates automatically on every save() and delete() — no manual reload() needed.
 //
 // Usage: subclass PublishedService<T> and use it as @StateObject.
@@ -35,7 +35,7 @@ struct CombineDemoView: View {
                 // service.published is @Published — the list rebuilds automatically
                 // whenever service.save() or service.delete() is called.
                 Section("Notes (\(service.published.count))") {
-                    ForEach(sortedNotes) { note in
+                    ForEach(service.published) { note in
                         VStack(alignment: .leading, spacing: 2) {
                             Text(note.title).font(.headline)
                             if !note.body.isEmpty {
@@ -44,17 +44,13 @@ struct CombineDemoView: View {
                         }
                     }
                     .onDelete { offsets in
-                        offsets.forEach { service.delete(sortedNotes[$0]) }
+                        offsets.forEach { service.delete(service.published[$0]) }
                     }
                 }
             }
             .navigationTitle("Combine — PublishedService<T>")
             .toolbar { EditButton() }
         }
-    }
-
-    private var sortedNotes: [Note] {
-        service.published.sorted { $0.createdAt < $1.createdAt }
     }
 
     private func addNote() {

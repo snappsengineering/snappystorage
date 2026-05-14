@@ -4,7 +4,7 @@ import SnappyStorage
 // Demonstrates the async/await ActorService<T> layer.
 //
 // ActorService<T> is a Swift actor — all methods are async and thread-safe.
-// service.updates is an AsyncStream<Set<T>> that yields on every mutation.
+// service.updates is an AsyncStream<[T]> that yields on every mutation.
 // Use .task { } to subscribe: it automatically cancels when the view disappears.
 
 @MainActor
@@ -21,7 +21,7 @@ final class AsyncNoteViewModel: ObservableObject {
     // Called from .task { } — runs until the view disappears (task cancellation).
     func observeUpdates() async {
         for await collection in await service.updates {
-            notes = collection.sorted { $0.createdAt < $1.createdAt }
+            notes = collection
         }
     }
 

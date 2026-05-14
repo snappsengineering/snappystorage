@@ -31,7 +31,7 @@ final class ServiceTests: XCTestCase {
 
     func testSaveMultiple() {
         let service = makeService()
-        let items: Set<StoredObject> = [
+        let items: [StoredObject] = [
             StoredObject(name: "a", value: 1),
             StoredObject(name: "b", value: 2)
         ]

@@ -5,11 +5,11 @@ import Foundation
 public actor ActorService<T: Storable & Sendable> {
 
     private let storage: Storage
-    private var collection: Set<T>
-    private let continuation: AsyncStream<Set<T>>.Continuation
-    private let _stream: AsyncStream<Set<T>>
+    private var collection: [T]
+    private let continuation: AsyncStream<[T]>.Continuation
+    private let _stream: AsyncStream<[T]>
 
-    public var updates: AsyncStream<Set<T>> { _stream }
+    public var updates: AsyncStream<[T]> { _stream }
 
     public init(
         destination: Destination = .local(.documentDirectory),
@@ -25,13 +25,13 @@ public actor ActorService<T: Storable & Sendable> {
             encryption: encryption
         )
         self.collection = storage.fetchCollectionOrEmpty()
-        let (stream, continuation) = AsyncStream<Set<T>>.makeStream(bufferingPolicy: .bufferingNewest(1))
+        let (stream, continuation) = AsyncStream<[T]>.makeStream(bufferingPolicy: .bufferingNewest(1))
         self._stream = stream
         self.continuation = continuation
         continuation.yield(collection)
     }
 
-    public func fetchAll() -> Set<T> {
+    public func fetchAll() -> [T] {
         collection
     }
 
@@ -40,17 +40,32 @@ public actor ActorService<T: Storable & Sendable> {
     }
 
     public func save(_ item: T) {
-        collection.update(with: item)
+        if let index = collection.firstIndex(where: { $0.id == item.id }) {
+            collection[index] = item
+        } else {
+            collection.append(item)
+        }
         persist()
     }
 
-    public func save(_ items: Set<T>) {
-        items.forEach { collection.update(with: $0) }
+    public func save(_ items: [T]) {
+        for item in items {
+            if let index = collection.firstIndex(where: { $0.id == item.id }) {
+                collection[index] = item
+            } else {
+                collection.append(item)
+            }
+        }
+        persist()
+    }
+
+    public func replace(_ items: [T]) {
+        collection = items
         persist()
     }
 
     public func delete(_ item: T) {
-        collection.remove(item)
+        collection.removeAll { $0.id == item.id }
         persist()
     }
 
