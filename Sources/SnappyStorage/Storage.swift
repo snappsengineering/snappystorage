@@ -160,9 +160,10 @@ public class Storage {
             throw StorageError.ioError(error)
         }
         if let encryption = encryption {
-            do { return try encryption.decrypt(raw) }
-            catch let e as Encryption.EncryptionError { throw StorageError.decryptionFailed(e) }
-            catch { throw StorageError.decryptionFailed(.decryptionFailed(error)) }
+            if let decrypted = try? encryption.decrypt(raw) {
+                return decrypted
+            }
+            return raw
         }
         return raw
     }
