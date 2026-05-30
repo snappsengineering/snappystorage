@@ -51,19 +51,19 @@ public class Storage {
         )
     }
 
-    // MARK: - Collection (Set<T: Storable>)
+    // MARK: - Collection ([T: Storable])
 
-    public func store<T: Storable>(collection: Set<T>) throws {
+    public func store<T: Storable>(collection: [T]) throws {
         let data = try encode(collection)
         try writeData(data)
     }
 
-    public func fetchCollection<T: Storable>() throws -> Set<T> {
+    public func fetchCollection<T: Storable>() throws -> [T] {
         let data = try readData()
         return try decode(data)
     }
 
-    public func fetchCollectionOrEmpty<T: Storable>() -> Set<T> {
+    public func fetchCollectionOrEmpty<T: Storable>() -> [T] {
         (try? fetchCollection()) ?? []
     }
 
@@ -160,9 +160,10 @@ public class Storage {
             throw StorageError.ioError(error)
         }
         if let encryption = encryption {
-            do { return try encryption.decrypt(raw) }
-            catch let e as Encryption.EncryptionError { throw StorageError.decryptionFailed(e) }
-            catch { throw StorageError.decryptionFailed(.decryptionFailed(error)) }
+            if let decrypted = try? encryption.decrypt(raw) {
+                return decrypted
+            }
+            return raw
         }
         return raw
     }

@@ -32,7 +32,7 @@ Add to your `Package.swift`:
 ```swift
 import SnappyStorage
 
-// Service manages a Set<T> backed by a JSON file
+// Service manages a [T] backed by a JSON file — order is preserved
 let noteService = Service<Note>()
 
 noteService.save(note)
@@ -62,7 +62,7 @@ let service = Service<Note>(encryption: enc)
 
 ```swift
 let service = PublishedService<Note>()
-// service.$published is a Publisher<Set<Note>, Never>
+// service.$published is a Publisher<[Note], Never>
 ```
 
 ### Async/await
@@ -110,7 +110,7 @@ struct Note: Storable {
 }
 ```
 
-`Storable` requires `id: String`, `Codable`, and `Hashable`. Default implementations for `hash(into:)` and `==` are provided via equality on `id`.
+`Storable` requires `id: String`, `Codable`, and `Equatable`. A default `==` implementation is provided via equality on `id`.
 
 ## Destinations
 

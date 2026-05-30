@@ -29,18 +29,18 @@ final class StorageTests: XCTestCase {
 
     func testStoreAndFetchCollection() throws {
         let storage = try makeStorage()
-        let items: Set<StoredObject> = [
+        let items: [StoredObject] = [
             StoredObject(name: "a", value: 1),
             StoredObject(name: "b", value: 2)
         ]
         try storage.store(collection: items)
-        let fetched: Set<StoredObject> = try storage.fetchCollection()
+        let fetched: [StoredObject] = try storage.fetchCollection()
         XCTAssertEqual(fetched.count, 2)
     }
 
     func testFetchCollectionOrEmptyWhenNoFile() throws {
         let storage = try makeStorage(fileName: "nonexistent")
-        let result: Set<StoredObject> = storage.fetchCollectionOrEmpty()
+        let result: [StoredObject] = storage.fetchCollectionOrEmpty()
         XCTAssertTrue(result.isEmpty)
     }
 
@@ -88,9 +88,9 @@ final class StorageTests: XCTestCase {
         let key = Encryption.generateKey()
         let enc = Encryption(key: key)
         let storage = try makeStorage(fileName: "encrypted", encryption: enc)
-        let items: Set<StoredObject> = [StoredObject(name: "secret", value: 42)]
+        let items: [StoredObject] = [StoredObject(name: "secret", value: 42)]
         try storage.store(collection: items)
-        let fetched: Set<StoredObject> = try storage.fetchCollection()
+        let fetched: [StoredObject] = try storage.fetchCollection()
         XCTAssertEqual(fetched.first?.name, "secret")
     }
 

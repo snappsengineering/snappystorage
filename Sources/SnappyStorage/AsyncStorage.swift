@@ -21,11 +21,11 @@ public struct AsyncStorage {
 
     // MARK: - Collection
 
-    public func store<T: Storable>(collection: Set<T>) async throws {
+    public func store<T: Storable>(collection: [T]) async throws {
         try storage.store(collection: collection)
     }
 
-    public func fetchCollection<T: Storable>() async throws -> Set<T> {
+    public func fetchCollection<T: Storable>() async throws -> [T] {
         try storage.fetchCollection()
     }
 
