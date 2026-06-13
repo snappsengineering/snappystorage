@@ -1,6 +1,6 @@
 # SnappyStorage — Future Improvements
 
-Local note. Last updated: 2026-06-07 (query/predicate section added).
+Local note. Last updated: 2026-06-11 (Storable lifecycle metadata).
 
 ## API principle: Set at Service level
 
@@ -45,6 +45,28 @@ Local note. Last updated: 2026-06-07 (query/predicate section added).
 
 - `09c1b3c` — initial release; **`Set<T>` Service API**
 - **Ledger** pins to `main` until branch merge preserves Set API
+
+---
+
+## Storable lifecycle metadata
+
+Extend `Storable` (or a `StorableMetadata` mixin) with version-aware lifecycle fields on top of `dateCreated`:
+
+| Property | Type | Notes |
+|----------|------|-------|
+| **`introducedVersion`** | `String` | App or SnappyStorage schema version when this record type (or field) was first introduced |
+| **`dateCreated`** | `Date` | When the record was first persisted (base metadata) |
+| **`dropDate`** | `Date?` | When the record type or field was retired from active use; `nil` = still live |
+
+Optional later: **`droppedVersion`** (`String?`) — app version that stopped writing or reading the field, paired with `dropDate` for migrations and strict-decrypt diagnostics.
+
+Use cases:
+
+- Migration tooling can skip or transform records/fields past their `dropDate`
+- Support can see which app build introduced a shape (`introducedVersion`) vs when it was deprecated
+- Ledger and Workd long-lived stores can audit schema drift without ad-hoc per-model timestamps
+
+Not on `main` today — add when merging layout/migration work.
 
 ---
 
@@ -133,6 +155,7 @@ ViewModels call `activityService.query(ActivityQuery.forDay(date).spec()).ordere
 
 ## Backlog
 
+- [ ] **`Storable` lifecycle metadata** — `introducedVersion`, `dateCreated`, `dropDate` (see above)
 - [ ] Public `FileStorage` / `BlobDirectoryStore`
 - [ ] Strict decrypt flag
 - [ ] Surface `persist()` errors instead of `try?`
