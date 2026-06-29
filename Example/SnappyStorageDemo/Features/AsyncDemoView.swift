@@ -1,24 +1,22 @@
 import SwiftUI
 import SnappyStorage
 
-// Demonstrates the async/await ActorService<T> layer.
-//
-// ActorService<T> is a Swift actor — all methods are async and thread-safe.
-// service.updates is an AsyncStream<Set<T>> that yields on every mutation.
-// Use .task { } to subscribe: it automatically cancels when the view disappears.
+// MARK: - AsyncNoteViewModel
 
 @MainActor
 final class AsyncNoteViewModel: ObservableObject {
 
+    // MARK: - Properties
+
     @Published var notes: [Note] = []
 
-    // ActorService.init throws only if the destination URL is invalid.
     private let service = try! ActorService<Note>(
         destination: .local(.documentDirectory),
         fileName: "NotesActor"
     )
 
-    // Called from .task { } — runs until the view disappears (task cancellation).
+    // MARK: - Public
+
     func observeUpdates() async {
         for await collection in await service.updates {
             notes = collection.sorted { $0.createdAt < $1.createdAt }
@@ -34,11 +32,17 @@ final class AsyncNoteViewModel: ObservableObject {
     }
 }
 
+// MARK: - AsyncDemoView
+
 struct AsyncDemoView: View {
+
+    // MARK: - Properties
 
     @StateObject private var viewModel = AsyncNoteViewModel()
     @State private var newTitle = ""
     @State private var newBody = ""
+
+    // MARK: - Body
 
     var body: some View {
         NavigationStack {
@@ -74,7 +78,6 @@ struct AsyncDemoView: View {
             }
             .navigationTitle("Async — ActorService<T>")
             .toolbar { EditButton() }
-            // .task subscribes to the AsyncStream. Automatically cancelled on disappear.
             .task { await viewModel.observeUpdates() }
         }
     }

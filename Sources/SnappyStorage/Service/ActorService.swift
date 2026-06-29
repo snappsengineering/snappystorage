@@ -1,35 +1,53 @@
 import Foundation
 
-/// Actor-based service for use with Swift concurrency.
-/// Thread-safe collection management with AsyncStream updates.
 public actor ActorService<T: Storable & Sendable> {
 
-    private let storage: Storage
+    // MARK: - Properties
+
+    private let storage: Storage<T>
+    private let jsonEncoder: JSONEncoder
+    private let jsonDecoder: JSONDecoder
+    private let encryption: Encryption?
     private var collection: Set<T>
     private let continuation: AsyncStream<Set<T>>.Continuation
     private let _stream: AsyncStream<Set<T>>
 
     public var updates: AsyncStream<Set<T>> { _stream }
 
+    // MARK: - Lifecycle
+
     public init(
         destination: Destination = .local(.documentDirectory),
         fileName: String? = nil,
         fileExtension: String = "json",
+        jsonEncoder: JSONEncoder = JSONEncoder(),
+        jsonDecoder: JSONDecoder = JSONDecoder(),
         encryption: Encryption? = nil
     ) throws {
-        let name = fileName ?? "\(T.self)"
-        self.storage = try Storage(
+        self.storage = ServiceBacking.makeStorage(
             destination: destination,
-            fileName: name,
-            fileExtension: fileExtension,
-            encryption: encryption
+            fileName: fileName,
+            fileExtension: fileExtension
         )
-        self.collection = storage.fetchCollectionOrEmpty()
+        self.jsonEncoder = jsonEncoder
+        self.jsonDecoder = jsonDecoder
+        self.encryption = encryption
+        do {
+            self.collection = try Payload.loadCollection(
+                storage: storage,
+                jsonDecoder: jsonDecoder,
+                encryption: encryption
+            )
+        } catch StorageError.fileDoesNotExist {
+            self.collection = []
+        }
         let (stream, continuation) = AsyncStream<Set<T>>.makeStream(bufferingPolicy: .bufferingNewest(1))
         self._stream = stream
         self.continuation = continuation
         continuation.yield(collection)
     }
+
+    // MARK: - Read
 
     public func fetchAll() -> Set<T> {
         collection
@@ -39,13 +57,15 @@ public actor ActorService<T: Storable & Sendable> {
         collection.first { $0.id == id }
     }
 
+    // MARK: - Write
+
     public func save(_ item: T) {
-        collection.update(with: item)
+        collection.upsert(item)
         persist()
     }
 
     public func save(_ items: Set<T>) {
-        items.forEach { collection.update(with: $0) }
+        items.forEach { collection.upsert($0) }
         persist()
     }
 
@@ -54,12 +74,21 @@ public actor ActorService<T: Storable & Sendable> {
         persist()
     }
 
+    // MARK: - File management
+
     public func removeFile() throws {
         try storage.remove()
     }
 
+    // MARK: - Private
+
     private func persist() {
-        try? storage.store(collection: collection)
+        try? Payload.storeItems(
+            Array(collection),
+            storage: storage,
+            jsonEncoder: jsonEncoder,
+            encryption: encryption
+        )
         continuation.yield(collection)
     }
 }

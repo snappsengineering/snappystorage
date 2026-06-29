@@ -3,6 +3,8 @@ import XCTest
 
 final class EncryptionTests: XCTestCase {
 
+    // MARK: - Encrypt and decrypt
+
     func testRoundTrip() throws {
         let enc = Encryption(key: Encryption.generateKey())
         let original = Data("Hello, World!".utf8)

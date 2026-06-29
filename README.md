@@ -4,11 +4,11 @@ Local-first persistence for Swift apps. File-backed JSON storage with optional e
 
 ## Features
 
-- **Synchronous base layer** — `Storage`, `Service<T>`, `SingleValueService<T>`. No async, no Combine. Works everywhere.
+- **Synchronous base layer** — `Service<T>`, `SingleValueService<T>`. Works everywhere.
 - **Combine layer** — `PublishedService<T>`, `PublishedSingleValueService<T>`. `@Published` properties for SwiftUI / reactive UIKit.
-- **Async/await layer** — `ActorService<T>`, `AsyncStorage`. Thread-safe actor-based service with `AsyncStream` updates.
-- **Encryption** — Optional AES-GCM encryption via CryptoKit. Pass an `Encryption` instance to any storage or service.
-- **File storage** — Raw `Data` read/write for binary blobs (images, exports, etc.).
+- **Async/await layer** — `ActorService<T>`. Thread-safe actor-based service with `AsyncStream` updates.
+- **Encryption** — Optional AES-GCM via CryptoKit. Pass `Encryption` to any service, or `Encryption(keychain: KeychainKeyStore.forApp(...))` for keychain-backed keys.
+- **Keychain keys** — `KeychainKeyStore` persists encryption keys per app (`Encryption(keychain:)`).
 - **Single value storage** — `SingleValueService<T>` replaces `UserDefaults` for any `Codable` value (structs, bools, strings).
 
 ## Requirements
@@ -77,7 +77,7 @@ for await update in service.updates {
 }
 ```
 
-`ActorService` requires `T` to conform to `Sendable` (Swift 6); `struct` models with `String`/`Int`/etc. satisfy this automatically.
+`ActorService` requires `T: Sendable` (Swift 6); `struct` models with `String`/`Int`/etc. satisfy this automatically. Public async collections use **`ActorService`** — internal `Storage` is sync bytes only.
 
 ## Architecture
 
@@ -88,15 +88,26 @@ for await update in service.updates {
 │ Service  │ Published│ ActorService          │
 │          │ Service  │ (async/await + stream) │
 │ Single   │ Published│                       │
-│ Value    │ Single   │ AsyncStorage          │
+│ Value    │ Single   │                       │
 │ Service  │ Value    │                       │
 ├──────────┴──────────┴───────────────────────┤
-│                  Storage                     │
-│          (file I/O, JSON, encryption)        │
+│  Payload (encode/encrypt) · internal Storage │
+│              (sync bytes at URL)             │
 ├──────────────────────────────────────────────┤
-│   Storable  │  Destination  │  Encryption    │
-└─────────────┴───────────────┴────────────────┘
+│ Storable │ Destination │ Layout │ Encryption │
+└──────────┴─────────────┴────────┴────────────┘
 ```
+
+### Source folders
+
+| Folder | Role |
+|--------|------|
+| `Storable/` | App models (`Storable`) |
+| `Data/` | `Layout`, chunk/automatic thresholds |
+| `Location/` | `Destination`, `File`, `Location` |
+| `Storage/` | Internal byte I/O |
+| `Service/` | `Service`, `ActorService`, `Payload` |
+| `Encoder/` · `Encryption/` | JSON + AES-GCM + Keychain |
 
 ## Conforming your model
 
@@ -147,7 +158,7 @@ The system may delete its contents at any time when storage is low, and it is **
 
 ## Example
 
-Open `Example/SnappyStorageDemo.xcodeproj` in Xcode. It demonstrates all four layers in a runnable iOS app:
+Open `Example/SnappyStorageDemo.xcodeproj` in Xcode. It demonstrates all layers in a runnable iOS app:
 
 - **Sync tab** — `Service<T>` synchronous read/write
 - **Combine tab** — `PublishedService<T>` with `@Published` automatic SwiftUI updates

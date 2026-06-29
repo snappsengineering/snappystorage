@@ -1,6 +1,33 @@
 # SnappyStorage — Future Improvements
 
-Local note. Last updated: 2026-06-11 (Storable lifecycle metadata).
+Local note. Last updated: 2026-06-28.
+
+**Canonical rules:** `~/Documents/Apps/CODING_STANDARDS.md` **Rule 14** (triad) and **Rule 13** (attributes, proposed). Quick ref: `.cursor/rules/snappy-coding-standards.mdc`.
+
+## Triad (Rule 14)
+
+| Concern | Types | Public? |
+|---------|--------|---------|
+| **What** | `Storable` | Yes |
+| **How** | `Service`, `ActorService`, `Payload` (encode/encrypt) | Service family yes |
+| **Where (config)** | `Destination`, `Layout` | Yes (`Layout`; `typealias CollectionLayout`) |
+| **Where (resolve)** | `File<T>`, `Location<T>`, `FileManager` extensions | No |
+| **Where (I/O)** | `Storage<T>` — sync `read`/`write`/`remove` | No |
+
+Flow: **Destination + File + Layout → Location → Storage (bytes)**. **Service** owns cache, CRUD, encode, encrypt. Public async = **`ActorService<T>`**.
+
+## Source layout (`Sources/SnappyStorage/`)
+
+| Folder | Contents |
+|--------|----------|
+| `Storable/` | `Storable` protocol |
+| `Data/` | `Layout`, `ChunkPolicy`, `AutomaticThresholds` |
+| `Location/` | `Destination`, `File`, `Location`, errors |
+| `Storage/` | `Storage`, `StorageError` |
+| `Service/` | `Service`, `ActorService`, `Published*`, `Payload`, `ServiceBacking` |
+| `Encoder/` | `JSONCoding`, `EncoderError` |
+| `Encryption/` | `Encryption`, `KeychainKeyStore`, errors |
+| `FileManager+Extensions/` | resolve + I/O helpers, `Data.writeAtomic` |
 
 ## API principle: Set at Service level
 
@@ -9,10 +36,10 @@ Local note. Last updated: 2026-06-11 (Storable lifecycle metadata).
 | Layer | Type | Notes |
 |-------|------|-------|
 | **Service API** | `Set<T>` | Unique by `Storable.id`; unordered |
-| **Storage / disk** | `[T]` JSON (monolith) | Encode/decode array internally; order not guaranteed to callers |
+| **Disk (via Payload)** | `[T]` JSON (default layout) | Encode/decode in Service layer; order not guaranteed to callers |
 | **App ViewModels** | `[T]` | Sort, filter, section for UI |
 
-`feature/array-backed-collections` may use array encoding on disk for order-preserving persistence — that must stay **internal to Storage**. When merging that branch, restore or preserve **`Set<T>` on Service** (as on `main` today).
+`feature/array-backed-collections` may use array encoding on disk for order-preserving persistence — that must stay **internal to Payload/Service**, not on the public `Storage` API. When merging that branch, restore or preserve **`Set<T>` on Service** (as on `main` today).
 
 ---
 
@@ -29,15 +56,15 @@ Local note. Last updated: 2026-06-11 (Storable lifecycle metadata).
 
 **Uncommitted on branch:**
 
-- `CollectionLayout.swift`, `CollectionLayoutTests.swift`
+- `Data/Layout.swift`, `LayoutTests.swift`
 - `docs/STORAGE_LAYOUT.md`
 - `README.md` updates
 
 **Before merge:**
 
 - [ ] **Revert or refactor Service public API back to `Set<T>`** if branch currently exposes `[T]`
-- [ ] Keep array backing inside `Storage` only (encode/decode JSON array without changing Service contract)
-- [ ] Wire `CollectionLayout` into `Service` / `Storage`
+- [ ] Keep array backing inside **Payload/Service** only (encode/decode JSON array without changing Service contract)
+- [ ] Wire **`Layout`** into `Location` → `Storage` (default layout guard today); expose on `Service` init when chunked ships
 - [ ] Revisit decrypt fallback — see **Strict decrypt** below
 - [ ] Update Example app; full test suite
 
@@ -74,10 +101,10 @@ Not on `main` today — add when merging layout/migration work.
 
 | Item | Priority | Notes |
 |------|----------|-------|
-| **`FileStorage` public API** | Medium | README mentions it; use `Storage.storeData` or add wrapper |
+| **Public raw-bytes API** | Low | Apps use `Service` / `SingleValueService`; `Storage` is internal sync I/O only |
 | **`BlobDirectoryStore`** | Medium | Encrypted PDF directory helper |
 | **Strict decrypt mode** | High | Fail closed instead of returning raw bytes on decrypt failure |
-| **Keychain key helper** | Low | Optional; Ledger uses LedgerCore `KeychainKeyStore` for now |
+| ~~**Keychain key helper**~~ | — | **Shipped:** `KeychainKeyStore` + `Encryption(keychain:)` in `Encryption/` |
 
 ---
 
@@ -87,13 +114,57 @@ From `docs/STORAGE_LAYOUT.md`:
 
 | App | Collection | Layout |
 |-----|------------|--------|
-| Schmoozy | `Card`, `Credential` | `.monolith` |
-| Workd | `Favorite` | `.monolith` |
+| Schmoozy | `Card`, `Credential` | `.default` |
+| Workd | `Favorite` | `.default` |
 | Workd | `Activity` (long history) | `.automatic` → chunked |
 
 Schmoozy: migrate `LocalStorageService` → `Service<T>` behind feature flag; preserve `Application Support` paths and backward compatibility.
 
-Workd: Activity history benefits most from chunked partial writes; ViewModels sort `Set<Activity>` for timeline UI.
+Workd: Activity history benefits most from chunked partial writes or **partitioned-by-month** (August entries in one file); ViewModels sort `Set<Activity>` for timeline UI.
+
+---
+
+## Partitioned layout (by attribute range)
+
+**Status:** not implemented. Documented design for Rule 14 **where** layer.
+
+Split on-disk files by a **model attribute** (date month, year, week, or app-defined string key) — not by chunk index or `id`.
+
+### Example
+
+```
+Activity/2024-08.json   →  all Activity rows whose partition key is August 2024
+```
+
+Use case: Workd activity log — load/save/purge one month without touching other months.
+
+### Planned types
+
+| Piece | Owner | Notes |
+|-------|--------|-------|
+| `Layout.partitioned(PartitionPolicy)` | Where | `Granularity`: `.calendarMonth`, `.calendarYear`, `.calendarWeek` |
+| `PartitionPolicy` | `Data/` or `Location/` | Equatable config only |
+| Partition key on `T` | What / How | `Partitionable.partitionDate`, or `partitionKey: (T) -> String` on Service init |
+| `Location.fileURL(partitionKey:)` | Where | `destination` + `file` base + `2024-08.json` |
+| `Storage` | Where | Bytes at one partition URL (unchanged) |
+| Load policy | How | v1: eager all partitions → `Set<T>`; later: query-scoped partition load |
+
+### Tasks
+
+- [ ] Add `PartitionPolicy` + `Layout.partitioned`
+- [ ] `Partitionable` protocol (or Service init closure) for partition key
+- [ ] `Location` multi-file path resolution; `usesDefaultFile == false`
+- [ ] Service: route `save`/`delete` to correct partition file
+- [ ] Migration: default → partitioned (optional, with `layoutVersion`)
+- [ ] Pilot: Workd `Activity` with `.partitioned(.calendarMonth)` + `partitionDate`
+- [ ] Docs + tests
+
+### Do not
+
+- Fold date bucketing into `chunked(ChunkPolicy)` — different semantics
+- Put `KeyPath` on `Layout` enum — keep layout Equatable; key resolution stays on Service/Location
+
+Details: [STORAGE_LAYOUT.md](STORAGE_LAYOUT.md) § Partitioned by attribute range.
 
 ---
 
@@ -156,18 +227,20 @@ ViewModels call `activityService.query(ActivityQuery.forDay(date).spec()).ordere
 ## Backlog
 
 - [ ] **`Storable` lifecycle metadata** — `introducedVersion`, `dateCreated`, `dropDate` (see above)
-- [ ] Public `FileStorage` / `BlobDirectoryStore`
+- [ ] `BlobDirectoryStore` helper
 - [ ] Strict decrypt flag
 - [ ] Surface `persist()` errors instead of `try?`
 - [ ] README: planned vs shipped APIs
 - [ ] Example app sync with encryption + layouts
+- [ ] **Partitioned layout** — `Layout.partitioned(PartitionPolicy)` by date month/year (see above)
 
 ## Suggested merge order
 
 1. Fix **Set-at-Service** on `feature/array-backed-collections`, then merge to `main`
-2. FileStorage wrapper + strict decrypt decision
-3. CollectionLayout (chunked); pilot Workd Activity
-4. Schmoozy monolith pilot behind feature flag
+2. Strict decrypt decision
+3. `Layout` chunked; pilot Workd Activity
+4. **Partitioned layout** (month buckets) — alternative/complement to chunked for Activity
+5. Schmoozy default-layout pilot behind feature flag
 
 ## References
 

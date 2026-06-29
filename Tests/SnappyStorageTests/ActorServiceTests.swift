@@ -3,7 +3,11 @@ import XCTest
 
 final class ActorServiceTests: XCTestCase {
 
+    // MARK: - Properties
+
     private var tempDir: URL!
+
+    // MARK: - Lifecycle
 
     override func setUp() {
         super.setUp()
@@ -16,6 +20,8 @@ final class ActorServiceTests: XCTestCase {
         try? FileManager.default.removeItem(at: tempDir)
         super.tearDown()
     }
+
+    // MARK: - Read and write
 
     func testSaveAndFetch() async throws {
         let svc = try ActorService<StoredObject>(destination: .custom(tempDir.path))

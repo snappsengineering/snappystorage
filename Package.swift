@@ -16,11 +16,12 @@ let package = Package(
     targets: [
         .target(
             name: "SnappyStorage",
-            path: "Sources"
+            path: "Sources/SnappyStorage"
         ),
         .testTarget(
             name: "SnappyStorageTests",
-            dependencies: ["SnappyStorage"]
+            dependencies: ["SnappyStorage"],
+            path: "Tests/SnappyStorageTests"
         ),
     ]
 )

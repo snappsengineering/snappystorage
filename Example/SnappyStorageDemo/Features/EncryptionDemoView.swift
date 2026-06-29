@@ -2,17 +2,9 @@ import SwiftUI
 import PhotosUI
 import SnappyStorage
 
-// Demonstrates:
-//   1. SingleValueService<UserPreferences> — one Codable value stored as a single JSON file.
-//      Ideal replacement for UserDefaults when storing structured settings.
-//
-//   2. Service<Photo> with Encryption — AES-256-GCM encrypted collection.
-//      Image data is encrypted at rest; reading with the wrong key returns empty.
-//      In a real app, store and retrieve the key from the Keychain.
-
 struct EncryptionDemoView: View {
 
-    // MARK: - Single value (settings)
+    // MARK: - Properties
 
     private let prefsService = SingleValueService<UserPreferences>(
         destination: .local(.documentDirectory),
@@ -20,10 +12,6 @@ struct EncryptionDemoView: View {
     )
     @State private var prefs = UserPreferences()
 
-    // MARK: - Encrypted photo storage
-
-    // Encryption(keyString:) derives a 256-bit AES key from the string via SHA-256.
-    // In production: replace with a key loaded from the Keychain.
     private let photoService = Service<Photo>(
         destination: .local(.documentDirectory),
         fileName: "Photos",
@@ -32,6 +20,8 @@ struct EncryptionDemoView: View {
     @State private var photos: [Photo] = []
     @State private var pickerItem: PhotosPickerItem?
     @State private var caption = ""
+
+    // MARK: - Body
 
     var body: some View {
         NavigationStack {
@@ -47,7 +37,7 @@ struct EncryptionDemoView: View {
         }
     }
 
-    // MARK: - SingleValueService
+    // MARK: - SingleValueService views
 
     private var preferencesSection: some View {
         Section {
@@ -62,7 +52,7 @@ struct EncryptionDemoView: View {
         }
     }
 
-    // MARK: - Encrypted photos
+    // MARK: - Encrypted photos views
 
     private var photosSection: some View {
         Section {

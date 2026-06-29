@@ -3,7 +3,11 @@ import XCTest
 
 final class ServiceTests: XCTestCase {
 
+    // MARK: - Properties
+
     private var tempDir: URL!
+
+    // MARK: - Lifecycle
 
     override func setUp() {
         super.setUp()
@@ -17,9 +21,13 @@ final class ServiceTests: XCTestCase {
         super.tearDown()
     }
 
+    // MARK: - Helpers
+
     private func makeService() -> Service<StoredObject> {
         Service<StoredObject>(destination: .custom(tempDir.path))
     }
+
+    // MARK: - Read and write
 
     func testSaveAndFetch() {
         let service = makeService()
@@ -56,6 +64,8 @@ final class ServiceTests: XCTestCase {
         XCTAssertTrue(service.fetchAll().isEmpty)
     }
 
+    // MARK: - Persistence
+
     func testPersistenceAcrossInstances() {
         let s1 = makeService()
         s1.save(StoredObject(name: "persist", value: 99))
@@ -79,5 +89,45 @@ final class ServiceTests: XCTestCase {
         XCTAssertEqual(service.fetchAll().count, 1)
         service.reload()
         XCTAssertEqual(service.fetchAll().count, 1)
+    }
+
+    // MARK: - Encryption
+
+    func testEncryptedRoundTrip() {
+        let enc = Encryption(key: Encryption.generateKey())
+        let svc = Service<StoredObject>(destination: .custom(tempDir.path), encryption: enc)
+        svc.save(StoredObject(name: "secret", value: 42))
+        let loaded = Service<StoredObject>(destination: .custom(tempDir.path), encryption: enc)
+        XCTAssertEqual(loaded.fetchAll().first?.name, "secret")
+    }
+
+    func testWrongKeyFailsDecryption() throws {
+        let enc1 = Encryption(key: Encryption.generateKey())
+        let enc2 = Encryption(key: Encryption.generateKey())
+        let storage = Storage(
+            location: Location(
+                destination: .custom(tempDir.path),
+                file: File<StoredObject>(name: "StoredObject")
+            )
+        )
+        try Payload.storeItems(
+            [StoredObject(name: "secret", value: 1)],
+            storage: storage,
+            jsonEncoder: JSONEncoder(),
+            encryption: enc1
+        )
+        XCTAssertThrowsError(
+            try Payload.fetchItems(
+                StoredObject.self,
+                storage: storage,
+                jsonDecoder: JSONDecoder(),
+                encryption: enc2
+            )
+        )
+    }
+
+    func testMissingFileReturnsEmptyCollection() {
+        let service = Service<StoredObject>(destination: .custom(tempDir.path))
+        XCTAssertTrue(service.fetchAll().isEmpty)
     }
 }
