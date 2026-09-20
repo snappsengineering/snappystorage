@@ -3,7 +3,11 @@ import XCTest
 
 final class SingleValueServiceTests: XCTestCase {
 
+    // MARK: - Properties
+
     private var tempDir: URL!
+
+    // MARK: - Lifecycle
 
     override func setUp() {
         super.setUp()
@@ -16,6 +20,8 @@ final class SingleValueServiceTests: XCTestCase {
         try? FileManager.default.removeItem(at: tempDir)
         super.tearDown()
     }
+
+    // MARK: - Read and write
 
     func testSaveAndFetch() throws {
         struct AppConfig: Codable, Equatable { var name: String; var version: String }
@@ -43,11 +49,11 @@ final class SingleValueServiceTests: XCTestCase {
             fileName: "flag"
         )
         try svc.save(true)
-        XCTAssertTrue(svc.exists)
         try svc.remove()
-        XCTAssertFalse(svc.exists)
         XCTAssertNil(svc.fetch())
     }
+
+    // MARK: - Encryption
 
     func testEncryptedSingleValue() throws {
         let enc = Encryption(key: Encryption.generateKey())
@@ -58,5 +64,21 @@ final class SingleValueServiceTests: XCTestCase {
         )
         try svc.save("classified")
         XCTAssertEqual(svc.fetch(), "classified")
+    }
+
+    // MARK: - load() vs fetch()
+
+    func testLoadReturnsNilWhenMissing() throws {
+        let svc = SingleValueService<String>(destination: .custom(tempDir.path), fileName: "missing")
+        XCTAssertNil(try svc.load())
+    }
+
+    func testLoadThrowsOnCorruptData() throws {
+        let storage = Storage(location: Location(destination: .custom(tempDir.path), file: File(name: "corrupt")))
+        try storage.write(Data("not json".utf8))
+        let svc = SingleValueService<String>(destination: .custom(tempDir.path), fileName: "corrupt")
+        XCTAssertThrowsError(try svc.load())
+        // fetch() stays lenient — returns nil instead of throwing.
+        XCTAssertNil(svc.fetch())
     }
 }

@@ -3,7 +3,11 @@ import XCTest
 
 final class ActorServiceTests: XCTestCase {
 
+    // MARK: - Properties
+
     private var tempDir: URL!
+
+    // MARK: - Lifecycle
 
     override func setUp() {
         super.setUp()
@@ -16,6 +20,8 @@ final class ActorServiceTests: XCTestCase {
         try? FileManager.default.removeItem(at: tempDir)
         super.tearDown()
     }
+
+    // MARK: - Read and write
 
     func testSaveAndFetch() async throws {
         let svc = try ActorService<StoredObject>(destination: .custom(tempDir.path))
@@ -33,6 +39,26 @@ final class ActorServiceTests: XCTestCase {
         await svc.save(obj)
         await svc.delete(obj)
         let all = await svc.fetchAll()
+        XCTAssertTrue(all.isEmpty)
+    }
+
+    func testSaveMultiple() async throws {
+        let svc = try ActorService<StoredObject>(destination: .custom(tempDir.path))
+        let items: Set<StoredObject> = [
+            StoredObject(name: "a", value: 1),
+            StoredObject(name: "b", value: 2)
+        ]
+        await svc.save(items)
+        let all = await svc.fetchAll()
+        XCTAssertEqual(all.count, 2)
+    }
+
+    func testRemoveFile() async throws {
+        let svc = try ActorService<StoredObject>(destination: .custom(tempDir.path))
+        await svc.save(StoredObject(name: "temp", value: 0))
+        try await svc.removeFile()
+        let reloaded = try ActorService<StoredObject>(destination: .custom(tempDir.path))
+        let all = await reloaded.fetchAll()
         XCTAssertTrue(all.isEmpty)
     }
 }

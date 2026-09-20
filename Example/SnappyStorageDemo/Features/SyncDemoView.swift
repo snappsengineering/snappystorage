@@ -1,26 +1,17 @@
 import SwiftUI
 import SnappyStorage
 
-// Demonstrates the synchronous Service<T> layer.
-//
-// Service<T> is a subclassable class that stores a Set<T> backed by a JSON file.
-// All reads and writes are synchronous — no callbacks, publishers, or async/await required.
-// Use it directly or subclass it to add domain-specific queries.
-//
-// Storage location:
-//   .documentDirectory  — user-visible, backed up, accessible in Files app.
-//                         Use for user-created content.
-//   .applicationSupportDirectory — not user-visible, backed up.
-//                         Use for app state and service data.
 struct SyncDemoView: View {
 
-    // Service<Note> uses documentDirectory by default.
-    // fileName defaults to the type name ("Note"), producing Note.json.
+    // MARK: - Properties
+
     private let service = Service<Note>()
 
     @State private var notes: [Note] = []
     @State private var newTitle = ""
     @State private var newBody = ""
+
+    // MARK: - Body
 
     var body: some View {
         NavigationStack {
@@ -49,6 +40,8 @@ struct SyncDemoView: View {
         }
     }
 
+    // MARK: - Helpers
+
     private func addNote() {
         let note = Note(title: newTitle, body: newBody)
         service.save(note)
@@ -62,7 +55,6 @@ struct SyncDemoView: View {
         reload()
     }
 
-    // fetchAll() returns Set<Note>. Sort for stable display order.
     private func reload() {
         notes = service.fetchAll().sorted { $0.createdAt < $1.createdAt }
     }

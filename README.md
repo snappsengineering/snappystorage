@@ -1,15 +1,22 @@
 # SnappyStorage
 
+[![Swift](https://img.shields.io/badge/Swift-6.0-orange.svg)](https://swift.org)
+[![Platforms](https://img.shields.io/badge/platforms-iOS%2018%20%7C%20macOS%2015%20%7C%20tvOS%2018%20%7C%20watchOS%2011-lightgrey.svg)](#requirements)
+[![CI](https://github.com/snappsengineering/snappystorage/actions/workflows/ci.yml/badge.svg)](https://github.com/snappsengineering/snappystorage/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+
 Local-first persistence for Swift apps. File-backed JSON storage with optional encryption — a clean replacement for scattered `UserDefaults` and manual `FileManager` code.
 
 ## Features
 
-- **Synchronous base layer** — `Storage`, `Service<T>`, `SingleValueService<T>`. No async, no Combine. Works everywhere.
-- **Combine layer** — `PublishedService<T>`, `PublishedSingleValueService<T>`. `@Published` properties for SwiftUI / reactive UIKit.
-- **Async/await layer** — `ActorService<T>`, `AsyncStorage`. Thread-safe actor-based service with `AsyncStream` updates.
-- **Encryption** — Optional AES-GCM encryption via CryptoKit. Pass an `Encryption` instance to any storage or service.
-- **File storage** — Raw `Data` read/write for binary blobs (images, exports, etc.).
+- **Synchronous base layer** — `Service<T>`, `SingleValueService<T>`. Works everywhere.
+- **Combine layer** — `PublishedService<T>`. `@Published` collection for SwiftUI / reactive UIKit.
+- **Async/await layer** — `ActorService<T>`. Thread-safe actor-based service with `AsyncStream` updates.
+- **Blob storage** — `BlobService` for raw `Data` (PDFs, images) that doesn't fit the `Storable` JSON model.
+- **Encryption** — Optional AES-GCM via CryptoKit. Pass `Encryption` to any service, or `Encryption(keychain: KeychainKeyStore.forApp(...))` for keychain-backed keys.
+- **Keychain keys** — `KeychainKeyStore` persists encryption keys per app (`Encryption(keychain:)`).
 - **Single value storage** — `SingleValueService<T>` replaces `UserDefaults` for any `Codable` value (structs, bools, strings).
+- **Soft-fail loading** — a corrupt or undecryptable file never crashes your app. `Service.loadError` / `Service.lastError` tell you what happened; the file itself is left untouched.
 
 ## Requirements
 
@@ -21,8 +28,8 @@ Local-first persistence for Swift apps. File-backed JSON storage with optional e
 Add to your `Package.swift`:
 
 ```swift
-// Track the main branch (always latest)
-.package(url: "https://github.com/snappsengineering/snappystorage.git", branch: "main")
+// Track a released version
+.package(url: "https://github.com/snappsengineering/snappystorage.git", from: "1.0.0")
 ```
 
 ## Quick Start
@@ -39,6 +46,12 @@ noteService.save(note)
 noteService.delete(note)
 let allNotes = noteService.fetchAll()
 let note = noteService.fetch(id: "abc123")
+
+// If the file existed but failed to load (corrupt data, wrong key),
+// loadError is set and collection starts empty — the file is untouched.
+if let error = noteService.loadError {
+    print("Note storage failed to load: \(error)")
+}
 ```
 
 ### Single value (replaces UserDefaults)
@@ -47,7 +60,11 @@ let note = noteService.fetch(id: "abc123")
 let configService = SingleValueService<AppConfig>(fileName: "AppConfig")
 
 try configService.save(AppConfig(theme: "dark", fontSize: 16))
-let config = configService.fetch() // AppConfig?
+let config = configService.fetch() // AppConfig?, nil on missing OR corrupt file
+
+// Or use load() to distinguish "never saved" (nil) from "corrupt" (throws) —
+// useful when you'd otherwise overwrite an undecryptable file with a fresh default.
+if let config = try configService.load() { /* ... */ }
 ```
 
 ### With encryption
@@ -77,7 +94,16 @@ for await update in service.updates {
 }
 ```
 
-`ActorService` requires `T` to conform to `Sendable` (Swift 6); `struct` models with `String`/`Int`/etc. satisfy this automatically.
+`ActorService` requires `T: Sendable` (Swift 6); `struct` models with `String`/`Int`/etc. satisfy this automatically. `Service`/`PublishedService`/`SingleValueService` are **not** thread-safe on their own — call them from one queue (e.g. `@MainActor`), or use `ActorService` for the actor-isolated async path.
+
+### Blobs (PDFs, images — anything that isn't `Storable`)
+
+```swift
+let blobs = BlobService(destination: .local(.applicationSupportDirectory), fileName: "receipt-1", fileExtension: "pdf")
+try blobs.storeData(pdfData)
+let data = try blobs.fetchData()
+try blobs.remove()
+```
 
 ## Architecture
 
@@ -87,16 +113,30 @@ for await update in service.updates {
 ├──────────┬──────────┬───────────────────────┤
 │ Service  │ Published│ ActorService          │
 │          │ Service  │ (async/await + stream) │
-│ Single   │ Published│                       │
-│ Value    │ Single   │ AsyncStorage          │
-│ Service  │ Value    │                       │
+│ Single   │          │                       │
+│ Value    │          │ BlobService           │
+│ Service  │          │ (raw Data)            │
 ├──────────┴──────────┴───────────────────────┤
-│                  Storage                     │
-│          (file I/O, JSON, encryption)        │
+│      Persistence (encode/encrypt) ·          │
+│         internal Storage (sync bytes)        │
 ├──────────────────────────────────────────────┤
-│   Storable  │  Destination  │  Encryption    │
-└─────────────┴───────────────┴────────────────┘
+│ Storable │ Destination │ Encryption          │
+└──────────┴─────────────┴─────────────────────┘
 ```
+
+### Source folders
+
+| Folder | Role |
+|--------|------|
+| `Storable/` | App models (`Storable`) |
+| `Location/` | `Destination`, `File`, `Location` (internal path resolution) |
+| `Storage/` | `Storage` (internal byte I/O), `Persistence` (encode/encrypt) |
+| `Service/` | `Service`, `ActorService`, `PublishedService`, `SingleValueService`, `BlobService` |
+| `Encoder/` · `Encryption/` | JSON + AES-GCM + Keychain |
+
+## Shipped vs planned
+
+Everything above is shipped and tested (≥95% line coverage). Chunked/per-record/partitioned on-disk layouts and a query/predicate layer are **designed but not implemented** — see [`docs/FUTURE_IMPROVEMENTS.md`](docs/FUTURE_IMPROVEMENTS.md) and [`docs/STORAGE_LAYOUT.md`](docs/STORAGE_LAYOUT.md). `Service` always uses one JSON file per collection today.
 
 ## Conforming your model
 
@@ -117,7 +157,7 @@ struct Note: Storable {
 ```swift
 Service<Note>(destination: .local(.documentDirectory))          // default
 Service<Note>(destination: .local(.applicationSupportDirectory))
-Service<Note>(destination: .cloud)                               // iCloud ubiquity container
+Service<Note>(destination: .iCloud)                              // iCloud ubiquity container
 Service<Note>(destination: .custom("/absolute/path/to/folder"))
 ```
 
@@ -128,7 +168,7 @@ Service<Note>(destination: .custom("/absolute/path/to/folder"))
 | `.documentDirectory` | ✅ iCloud backup | ✅ Files app | User-created content (notes, photos, exports) |
 | `.applicationSupportDirectory` | ✅ iCloud backup | ❌ | App state, service data, credentials |
 | `.cachesDirectory` | ❌ Purged by OS | ❌ | Derived/reconstructible data, thumbnails |
-| `.cloud` | ✅ iCloud Drive sync | ✅ iCloud Drive | Cross-device sync |
+| `.iCloud` | ✅ iCloud Drive sync | ✅ iCloud Drive | Cross-device sync |
 
 ### Rule of thumb (why it matters)
 
@@ -147,7 +187,7 @@ The system may delete its contents at any time when storage is low, and it is **
 
 ## Example
 
-Open `Example/SnappyStorageDemo.xcodeproj` in Xcode. It demonstrates all four layers in a runnable iOS app:
+Open `Example/SnappyStorageDemo.xcodeproj` in Xcode. It demonstrates all layers in a runnable iOS app:
 
 - **Sync tab** — `Service<T>` synchronous read/write
 - **Combine tab** — `PublishedService<T>` with `@Published` automatic SwiftUI updates
