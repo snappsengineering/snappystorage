@@ -11,14 +11,6 @@ final class DestinationTests: XCTestCase {
         XCTAssertEqual(url.path, "/tmp/snappystorage-tests/Note.json")
     }
 
-    // MARK: - Deprecated alias
-
-    @available(*, deprecated, message: "intentionally exercises the deprecated .cloud alias")
-    func testCloudAliasResolvesToICloud() {
-        let aliased: Destination = .cloud
-        XCTAssertEqual(aliased, .iCloud)
-    }
-
     // MARK: - Local
 
     func testLocalResolvesUnderDirectory() throws {

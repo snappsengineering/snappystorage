@@ -24,7 +24,7 @@ final class ActorServiceTests: XCTestCase {
     // MARK: - Read and write
 
     func testSaveAndFetch() async throws {
-        let svc = try ActorService<StoredObject>(destination: .custom(tempDir.path))
+        let svc = ActorService<StoredObject>(destination: .custom(tempDir.path))
         let obj = StoredObject(name: "async", value: 1)
         await svc.save(obj)
         let all = await svc.fetchAll()
@@ -34,7 +34,7 @@ final class ActorServiceTests: XCTestCase {
     }
 
     func testDelete() async throws {
-        let svc = try ActorService<StoredObject>(destination: .custom(tempDir.path))
+        let svc = ActorService<StoredObject>(destination: .custom(tempDir.path))
         let obj = StoredObject(name: "del", value: 0)
         await svc.save(obj)
         await svc.delete(obj)
@@ -43,7 +43,7 @@ final class ActorServiceTests: XCTestCase {
     }
 
     func testSaveMultiple() async throws {
-        let svc = try ActorService<StoredObject>(destination: .custom(tempDir.path))
+        let svc = ActorService<StoredObject>(destination: .custom(tempDir.path))
         let items: Set<StoredObject> = [
             StoredObject(name: "a", value: 1),
             StoredObject(name: "b", value: 2)
@@ -54,10 +54,10 @@ final class ActorServiceTests: XCTestCase {
     }
 
     func testRemoveFile() async throws {
-        let svc = try ActorService<StoredObject>(destination: .custom(tempDir.path))
+        let svc = ActorService<StoredObject>(destination: .custom(tempDir.path))
         await svc.save(StoredObject(name: "temp", value: 0))
         try await svc.removeFile()
-        let reloaded = try ActorService<StoredObject>(destination: .custom(tempDir.path))
+        let reloaded = ActorService<StoredObject>(destination: .custom(tempDir.path))
         let all = await reloaded.fetchAll()
         XCTAssertTrue(all.isEmpty)
     }
