@@ -1,19 +1,19 @@
 import Foundation
 
-struct Storage<T> {
+struct Storage {
 
     // MARK: - Properties
 
-    let location: Location<T>
+    let location: Location
 
     // MARK: - Read and write
 
     func read() throws -> Data {
-        try FileManager.default.data(at: location.defaultFileURL())
+        try FileManager.default.data(at: location.fileURL())
     }
 
     func write(_ data: Data) throws {
-        try data.writeAtomic(to: location.defaultFileURL())
+        try data.writeAtomic(to: location.fileURL())
     }
 
     // MARK: - Remove

@@ -65,4 +65,20 @@ final class SingleValueServiceTests: XCTestCase {
         try svc.save("classified")
         XCTAssertEqual(svc.fetch(), "classified")
     }
+
+    // MARK: - load() vs fetch()
+
+    func testLoadReturnsNilWhenMissing() throws {
+        let svc = SingleValueService<String>(destination: .custom(tempDir.path), fileName: "missing")
+        XCTAssertNil(try svc.load())
+    }
+
+    func testLoadThrowsOnCorruptData() throws {
+        let storage = Storage(location: Location(destination: .custom(tempDir.path), file: File(name: "corrupt")))
+        try storage.write(Data("not json".utf8))
+        let svc = SingleValueService<String>(destination: .custom(tempDir.path), fileName: "corrupt")
+        XCTAssertThrowsError(try svc.load())
+        // fetch() stays lenient — returns nil instead of throwing.
+        XCTAssertNil(svc.fetch())
+    }
 }

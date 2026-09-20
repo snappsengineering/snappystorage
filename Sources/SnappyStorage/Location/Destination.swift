@@ -1,16 +1,24 @@
 import Foundation
 
-public enum Destination {
+public enum Destination: Sendable {
     case local(FileManager.SearchPathDirectory)
-    case cloud
+    case iCloud
     case custom(String)
+}
+
+// MARK: - Deprecated aliases
+
+extension Destination {
+
+    @available(*, deprecated, renamed: "iCloud")
+    public static var cloud: Destination { .iCloud }
 }
 
 // MARK: - URL resolution
 
 extension Destination {
 
-    func url<T>(for file: File<T>) throws -> URL {
+    func url(for file: File) throws -> URL {
         try folderURL().appendingPathComponent(file.fileName)
     }
 
@@ -19,7 +27,7 @@ extension Destination {
         switch self {
         case .local(let directory):
             return try fileManager.url(for: directory)
-        case .cloud:
+        case .iCloud:
             return try fileManager.ubiquityDocumentsURL()
         case .custom(let path):
             return URL(fileURLWithPath: path, isDirectory: true)

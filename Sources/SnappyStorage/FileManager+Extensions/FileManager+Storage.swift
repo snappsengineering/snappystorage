@@ -25,11 +25,6 @@ extension FileManager {
         }
     }
 
-    func modificationDate(at url: URL) -> Date? {
-        guard exists(at: url) else { return nil }
-        return try? attributesOfItem(atPath: url.path)[.modificationDate] as? Date
-    }
-
     func data(at url: URL) throws -> Data {
         guard exists(at: url) else { throw StorageError.fileDoesNotExist }
         do {

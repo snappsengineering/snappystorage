@@ -4,15 +4,11 @@ public actor ActorService<T: Storable & Sendable> {
 
     // MARK: - Properties
 
-    private let storage: Storage<T>
-    private let jsonEncoder: JSONEncoder
-    private let jsonDecoder: JSONDecoder
-    private let encryption: Encryption?
+    private let persistence: Persistence
     private var collection: Set<T>
     private let continuation: AsyncStream<Set<T>>.Continuation
-    private let _stream: AsyncStream<Set<T>>
 
-    public var updates: AsyncStream<Set<T>> { _stream }
+    public let updates: AsyncStream<Set<T>>
 
     // MARK: - Lifecycle
 
@@ -24,27 +20,28 @@ public actor ActorService<T: Storable & Sendable> {
         jsonDecoder: JSONDecoder = JSONDecoder(),
         encryption: Encryption? = nil
     ) throws {
-        self.storage = ServiceBacking.makeStorage(
+        let persistence = Persistence(
             destination: destination,
-            fileName: fileName,
-            fileExtension: fileExtension
+            fileName: fileName ?? "\(T.self)",
+            fileExtension: fileExtension,
+            encoder: jsonEncoder,
+            decoder: jsonDecoder,
+            encryption: encryption
         )
-        self.jsonEncoder = jsonEncoder
-        self.jsonDecoder = jsonDecoder
-        self.encryption = encryption
+        self.persistence = persistence
         do {
-            self.collection = try Payload.loadCollection(
-                storage: storage,
-                jsonDecoder: jsonDecoder,
-                encryption: encryption
-            )
+            self.collection = Set(try persistence.read([T].self))
         } catch StorageError.fileDoesNotExist {
             self.collection = []
         }
         let (stream, continuation) = AsyncStream<Set<T>>.makeStream(bufferingPolicy: .bufferingNewest(1))
-        self._stream = stream
+        self.updates = stream
         self.continuation = continuation
         continuation.yield(collection)
+    }
+
+    deinit {
+        continuation.finish()
     }
 
     // MARK: - Read
@@ -77,18 +74,13 @@ public actor ActorService<T: Storable & Sendable> {
     // MARK: - File management
 
     public func removeFile() throws {
-        try storage.remove()
+        try persistence.remove()
     }
 
     // MARK: - Private
 
     private func persist() {
-        try? Payload.storeItems(
-            Array(collection),
-            storage: storage,
-            jsonEncoder: jsonEncoder,
-            encryption: encryption
-        )
+        try? persistence.write(Array(collection))
         continuation.yield(collection)
     }
 }

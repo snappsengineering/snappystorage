@@ -1,15 +1,21 @@
 import Foundation
+import os
 
 open class Service<T: Storable> {
 
     // MARK: - Properties
 
-    private let storage: Storage<T>
-    private let jsonEncoder: JSONEncoder
-    private let jsonDecoder: JSONDecoder
-    private let encryption: Encryption?
+    private let persistence: Persistence
+    private static var logger: Logger { Logger(subsystem: "com.snappsengineering.snappystorage", category: "\(T.self)") }
 
     public private(set) var collection: Set<T>
+
+    /// Set when the on-disk file exists but failed to load (corrupt data, wrong encryption key).
+    /// The file is left untouched; `collection` starts empty so the app doesn't crash.
+    public private(set) var loadError: Error?
+
+    /// Set when the most recent `persist()` (triggered by `save`/`delete`) failed to write.
+    public private(set) var lastError: Error?
 
     // MARK: - Lifecycle
 
@@ -21,19 +27,17 @@ open class Service<T: Storable> {
         jsonDecoder: JSONDecoder = JSONDecoder(),
         encryption: Encryption? = nil
     ) {
-        self.storage = ServiceBacking.makeStorage(
+        self.persistence = Persistence(
             destination: destination,
-            fileName: fileName,
-            fileExtension: fileExtension
-        )
-        self.jsonEncoder = jsonEncoder
-        self.jsonDecoder = jsonDecoder
-        self.encryption = encryption
-        self.collection = Self.initialCollection(
-            storage: storage,
-            jsonDecoder: jsonDecoder,
+            fileName: fileName ?? "\(T.self)",
+            fileExtension: fileExtension,
+            encoder: jsonEncoder,
+            decoder: jsonDecoder,
             encryption: encryption
         )
+        let (collection, error) = Self.load(persistence: persistence)
+        self.collection = collection
+        self.loadError = error
     }
 
     // MARK: - Read
@@ -66,49 +70,43 @@ open class Service<T: Storable> {
     // MARK: - File management
 
     public func removeFile() throws {
-        try storage.remove()
+        try persistence.remove()
     }
 
     public func reload() {
-        do {
-            collection = try Payload.loadCollection(
-                storage: storage,
-                jsonDecoder: jsonDecoder,
-                encryption: encryption
-            )
-        } catch StorageError.fileDoesNotExist {
-            collection = []
-        } catch {
-            // leave collection unchanged on decode / decrypt failure
-        }
+        let (collection, error) = Self.load(persistence: persistence)
+        self.collection = collection
+        self.loadError = error
     }
+
+    // MARK: - Change hook
+
+    /// Called once after every successful `save`/`delete`. Override to react to changes —
+    /// `PublishedService` mirrors `collection` into `@Published published` here.
+    open func collectionDidChange() {}
 
     // MARK: - Internal
 
     func persist() {
-        try? Payload.storeItems(
-            Array(collection),
-            storage: storage,
-            jsonEncoder: jsonEncoder,
-            encryption: encryption
-        )
+        do {
+            try persistence.write(Array(collection))
+            lastError = nil
+        } catch {
+            lastError = error
+            Self.logger.warning("SnappyStorage persist failed: \(error.localizedDescription)")
+        }
+        collectionDidChange()
     }
 
-    private static func initialCollection(
-        storage: Storage<T>,
-        jsonDecoder: JSONDecoder,
-        encryption: Encryption?
-    ) -> Set<T> {
+    private static func load(persistence: Persistence) -> (Set<T>, Error?) {
         do {
-            return try Payload.loadCollection(
-                storage: storage,
-                jsonDecoder: jsonDecoder,
-                encryption: encryption
-            )
+            let items: [T] = try persistence.read([T].self)
+            return (Set(items), nil)
         } catch StorageError.fileDoesNotExist {
-            return []
+            return ([], nil)
         } catch {
-            fatalError("SnappyStorage failed to load collection: \(error)")
+            logger.warning("SnappyStorage failed to load collection, starting empty: \(error.localizedDescription)")
+            return ([], error)
         }
     }
 }

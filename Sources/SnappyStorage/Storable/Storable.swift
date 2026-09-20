@@ -11,8 +11,8 @@ public protocol Storable: Codable, Hashable, Identifiable {
 extension Storable {
 
     public static func generateHexID(length: Int = 6) -> String {
-        let randomValue = Int.random(in: 0...(16_777_215))
-        return String(format: "%0\(length)X", randomValue)
+        let digits = "0123456789ABCDEF"
+        return String((0..<length).map { _ in digits.randomElement()! })
     }
 
     public func hash(into hasher: inout Hasher) {

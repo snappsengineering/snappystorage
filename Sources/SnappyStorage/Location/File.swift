@@ -1,10 +1,10 @@
 import Foundation
 
-struct File<T> {
+struct File {
 
     // MARK: - Properties
 
-    var name: String = "\(T.self)"
+    var name: String
     var fileExtension: String = "json"
 
     var fileName: String { "\(name).\(fileExtension)" }

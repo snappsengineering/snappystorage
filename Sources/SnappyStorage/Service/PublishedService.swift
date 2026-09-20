@@ -28,20 +28,9 @@ open class PublishedService<T: Storable>: Service<T>, ObservableObject {
         published = collection
     }
 
-    // MARK: - Write
+    // MARK: - Change hook
 
-    open override func save(_ item: T) {
-        super.save(item)
-        published = collection
-    }
-
-    open override func save(_ items: Set<T>) {
-        super.save(items)
-        published = collection
-    }
-
-    open override func delete(_ item: T) {
-        super.delete(item)
+    open override func collectionDidChange() {
         published = collection
     }
 }

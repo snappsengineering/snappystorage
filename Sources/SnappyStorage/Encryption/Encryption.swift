@@ -1,7 +1,7 @@
 import Foundation
 import CryptoKit
 
-public struct Encryption {
+public struct Encryption: Sendable {
 
     // MARK: - Properties
 
@@ -30,23 +30,20 @@ public struct Encryption {
     }
 
     public func encrypt(_ data: Data) throws -> Data {
+        let sealed: AES.GCM.SealedBox
         do {
-            let sealed = try AES.GCM.seal(data, using: key)
-            guard let combined = sealed.combined else { throw EncryptionError.invalidData }
-            return combined
-        } catch let error as EncryptionError {
-            throw error
+            sealed = try AES.GCM.seal(data, using: key)
         } catch {
             throw EncryptionError.encryptionFailed(error)
         }
+        guard let combined = sealed.combined else { throw EncryptionError.invalidData }
+        return combined
     }
 
     public func decrypt(_ data: Data) throws -> Data {
         do {
             let box = try AES.GCM.SealedBox(combined: data)
             return try AES.GCM.open(box, using: key)
-        } catch let error as EncryptionError {
-            throw error
         } catch {
             throw EncryptionError.decryptionFailed(error)
         }

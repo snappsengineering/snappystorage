@@ -53,6 +53,17 @@ final class KeychainKeyStoreTests: XCTestCase {
         XCTAssertNil(try store.load())
     }
 
+    func testDeleteIsIdempotentWhenNothingStored() throws {
+        // Nothing saved yet (setUp already deletes) — deleting again must not throw.
+        XCTAssertNoThrow(try store.delete())
+    }
+
+    func testForAppFactory() {
+        let store = KeychainKeyStore.forApp(bundleIdentifier: "com.snapps.test")
+        XCTAssertEqual(store.service, "com.snapps.test")
+        XCTAssertEqual(store.account, "snappystorage.encryptionKey")
+    }
+
     // MARK: - Helpers
 
     private func keyData(_ key: SymmetricKey) -> Data {

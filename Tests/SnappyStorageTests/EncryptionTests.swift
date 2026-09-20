@@ -1,3 +1,4 @@
+import CryptoKit
 import XCTest
 @testable import SnappyStorage
 
@@ -27,5 +28,20 @@ final class EncryptionTests: XCTestCase {
         let enc2 = Encryption(key: Encryption.generateKey())
         let encrypted = try enc1.encrypt(Data("secret".utf8))
         XCTAssertThrowsError(try enc2.decrypt(encrypted))
+    }
+
+    func testDecryptThrowsOnMalformedData() {
+        let enc = Encryption(key: Encryption.generateKey())
+        XCTAssertThrowsError(try enc.decrypt(Data("not-a-sealed-box".utf8)))
+    }
+
+    func testSymmetricKeyFromEmptyDataIsNil() {
+        XCTAssertNil(SymmetricKey(dataRepresentation: Data()))
+    }
+
+    func testSymmetricKeyDataRoundTrip() {
+        let key = Encryption.generateKey()
+        let restored = SymmetricKey(dataRepresentation: key.dataRepresentation)
+        XCTAssertEqual(restored?.dataRepresentation, key.dataRepresentation)
     }
 }

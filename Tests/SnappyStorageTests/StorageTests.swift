@@ -23,14 +23,23 @@ final class StorageTests: XCTestCase {
 
     // MARK: - Helpers
 
-    private struct TestFile {}
-
-    private func makeStorage(fileName: String = "test") -> Storage<TestFile> {
+    private func makeStorage(fileName: String = "test") -> Storage {
         Storage(
             location: Location(
                 destination: .custom(tempDir.path),
-                file: File<TestFile>(name: fileName)
+                file: File(name: fileName)
             )
+        )
+    }
+
+    private func makePersistence(fileName: String = "test", encryption: Encryption? = nil) -> Persistence {
+        Persistence(
+            destination: .custom(tempDir.path),
+            fileName: fileName,
+            fileExtension: "json",
+            encoder: JSONEncoder(),
+            decoder: JSONDecoder(),
+            encryption: encryption
         )
     }
 
@@ -55,14 +64,7 @@ final class StorageTests: XCTestCase {
     func testCorruptDataThrowsOnDecode() throws {
         let storage = makeStorage()
         try storage.write(Data("{ not json".utf8))
-        XCTAssertThrowsError(
-            try Payload.fetchItems(
-                StoredObject.self,
-                storage: storage,
-                jsonDecoder: JSONDecoder(),
-                encryption: nil
-            )
-        )
+        XCTAssertThrowsError(try makePersistence().read([StoredObject].self))
     }
 
     // MARK: - Remove
@@ -73,5 +75,28 @@ final class StorageTests: XCTestCase {
         XCTAssertEqual(try storage.read(), Data("temp".utf8))
         try storage.remove()
         XCTAssertThrowsError(try storage.read())
+    }
+
+    // MARK: - Persistence (encode/encrypt round trip)
+
+    func testPersistenceRoundTrip() throws {
+        let persistence = makePersistence()
+        try persistence.write([StoredObject(name: "a", value: 1)])
+        let loaded = try persistence.read([StoredObject].self)
+        XCTAssertEqual(loaded.first?.name, "a")
+    }
+
+    func testPersistenceEncryptedRoundTrip() throws {
+        let enc = Encryption(key: Encryption.generateKey())
+        let persistence = makePersistence(encryption: enc)
+        try persistence.write([StoredObject(name: "secret", value: 1)])
+        XCTAssertEqual(try persistence.read([StoredObject].self).first?.name, "secret")
+    }
+
+    func testPersistenceRemove() throws {
+        let persistence = makePersistence(fileName: "removable-persistence")
+        try persistence.write([StoredObject(name: "a", value: 1)])
+        try persistence.remove()
+        XCTAssertThrowsError(try persistence.read([StoredObject].self))
     }
 }

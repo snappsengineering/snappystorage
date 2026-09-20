@@ -8,14 +8,6 @@ public enum StorageError: LocalizedError {
     case directoryCreationFailed(String)
     case ioError(Error)
 
-    // MARK: - Internal
-
-    static var unsupportedLayout: NSError {
-        NSError(domain: "SnappyStorage", code: 1, userInfo: [
-            NSLocalizedDescriptionKey: "Collection layout is not supported yet"
-        ])
-    }
-
     // MARK: - LocalizedError
 
     public var errorDescription: String? {

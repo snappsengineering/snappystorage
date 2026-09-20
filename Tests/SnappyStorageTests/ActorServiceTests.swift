@@ -41,4 +41,24 @@ final class ActorServiceTests: XCTestCase {
         let all = await svc.fetchAll()
         XCTAssertTrue(all.isEmpty)
     }
+
+    func testSaveMultiple() async throws {
+        let svc = try ActorService<StoredObject>(destination: .custom(tempDir.path))
+        let items: Set<StoredObject> = [
+            StoredObject(name: "a", value: 1),
+            StoredObject(name: "b", value: 2)
+        ]
+        await svc.save(items)
+        let all = await svc.fetchAll()
+        XCTAssertEqual(all.count, 2)
+    }
+
+    func testRemoveFile() async throws {
+        let svc = try ActorService<StoredObject>(destination: .custom(tempDir.path))
+        await svc.save(StoredObject(name: "temp", value: 0))
+        try await svc.removeFile()
+        let reloaded = try ActorService<StoredObject>(destination: .custom(tempDir.path))
+        let all = await reloaded.fetchAll()
+        XCTAssertTrue(all.isEmpty)
+    }
 }
