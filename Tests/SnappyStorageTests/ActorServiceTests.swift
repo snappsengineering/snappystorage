@@ -256,4 +256,114 @@ final class ActorServiceTests: XCTestCase {
         let loadError = await svc.loadError
         XCTAssertNil(loadError)
     }
+
+    // MARK: - Concurrency
+
+    /// Many tasks calling `save` on distinct items concurrently. The actor serializes every
+    /// call internally, so no write should be lost regardless of interleaving — this pins
+    /// down that guarantee rather than just exercising the line.
+    func testConcurrentSavesOfDistinctItemsAllPersist() async throws {
+        let svc = ActorService<StoredObject>(destination: .custom(tempDir.path))
+        let items = (0..<50).map { StoredObject(name: "item-\($0)", value: $0) }
+
+        await withTaskGroup(of: Void.self) { group in
+            for item in items {
+                group.addTask { await svc.save(item) }
+            }
+        }
+
+        let count = await svc.count
+        XCTAssertEqual(count, items.count)
+        for item in items {
+            let fetched = await svc.fetch(id: item.id)
+            XCTAssertEqual(fetched?.value, item.value)
+        }
+
+        let reloaded = ActorService<StoredObject>(destination: .custom(tempDir.path))
+        let reloadedCount = await reloaded.count
+        XCTAssertEqual(reloadedCount, items.count, "every concurrent save must have persisted to disk")
+    }
+
+    /// Interleaved save/delete of the *same* item id from concurrent tasks. Actor isolation
+    /// guarantees each op runs atomically, so the only requirement is that the end state
+    /// matches *some* valid serialization — not that it crashes, corrupts the index, or drops
+    /// the write entirely.
+    func testConcurrentSaveAndDeleteOfSameItemStaysConsistent() async throws {
+        let svc = ActorService<StoredObject>(destination: .custom(tempDir.path))
+        let shared = StoredObject(id: "shared", name: "shared", value: 0)
+
+        await withTaskGroup(of: Void.self) { group in
+            for i in 0..<25 {
+                group.addTask { await svc.save(StoredObject(id: "shared", name: "v\(i)", value: i)) }
+                group.addTask { await svc.delete(shared) }
+            }
+        }
+
+        // Whatever the final state, index and collection must agree (no desync).
+        let count = await svc.count
+        let all = await svc.fetchAll()
+        XCTAssertEqual(count, all.count)
+        if let fetched = await svc.fetch(id: "shared") {
+            XCTAssertTrue(all.contains(fetched))
+        } else {
+            XCTAssertFalse(all.contains { $0.id == "shared" })
+        }
+    }
+
+    /// `unload()` racing with in-flight `save`s must not crash or corrupt in-memory state —
+    /// whatever lands last (unload or a save) fully determines the visible state, with no
+    /// partial/torn index.
+    func testConcurrentUnloadDuringSavesStaysConsistent() async throws {
+        let svc = ActorService<StoredObject>(destination: .custom(tempDir.path))
+        let items = (0..<20).map { StoredObject(name: "u-\($0)", value: $0) }
+
+        await withTaskGroup(of: Void.self) { group in
+            for item in items {
+                group.addTask { await svc.save(item) }
+            }
+            group.addTask { await svc.unload() }
+        }
+
+        let count = await svc.count
+        let all = await svc.fetchAll()
+        XCTAssertEqual(count, all.count, "index and collection must never disagree after a race with unload()")
+    }
+
+    /// Concurrent `replace(_:)` calls each install a full snapshot; the actor serializes them,
+    /// so the final state must be exactly one of the inputs, not a merge or partial mix.
+    func testConcurrentReplacesResultInOneCompleteSnapshot() async throws {
+        let svc = ActorService<StoredObject>(destination: .custom(tempDir.path))
+        let snapshotA: Set<StoredObject> = [StoredObject(id: "a1", name: "a1", value: 1)]
+        let snapshotB: Set<StoredObject> = [StoredObject(id: "b1", name: "b1", value: 2), StoredObject(id: "b2", name: "b2", value: 3)]
+
+        await withTaskGroup(of: Void.self) { group in
+            group.addTask { await svc.replace(snapshotA) }
+            group.addTask { await svc.replace(snapshotB) }
+        }
+
+        let all = await svc.fetchAll()
+        XCTAssertTrue(all == snapshotA || all == snapshotB, "final state must be exactly one full snapshot, not a mix")
+    }
+
+    /// `updates` is documented as a single-buffer, single-consumer stream (`.bufferingNewest(1)`).
+    /// Confirms a *second* iterator created after values have already been produced does not
+    /// hang and does not replay stale history — it only sees what's buffered from here on.
+    /// (Concurrently awaiting `.next()` on two live iterators of the same `AsyncStream` is
+    /// undefined behavior upstream and is intentionally not exercised here.)
+    func testSecondIteratorCreatedLaterDoesNotReplayHistory() async throws {
+        let svc = ActorService<StoredObject>(destination: .custom(tempDir.path))
+        var iteratorA = svc.updates.makeAsyncIterator()
+        let initialA = await iteratorA.next()
+        XCTAssertEqual(initialA, [])
+
+        await svc.save(StoredObject(name: "one", value: 1))
+        let afterSave = await iteratorA.next()
+        XCTAssertEqual(afterSave?.count, 1)
+
+        // A fresh iterator created now should get the *next* yield, not "one" again.
+        var iteratorB = svc.updates.makeAsyncIterator()
+        await svc.save(StoredObject(name: "two", value: 2))
+        let fromB = await iteratorB.next()
+        XCTAssertEqual(fromB?.count, 2)
+    }
 }
