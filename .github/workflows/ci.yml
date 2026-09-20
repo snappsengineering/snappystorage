@@ -12,5 +12,21 @@ jobs:
       - uses: actions/checkout@v4
       - name: Build
         run: swift build
-      - name: Test
-        run: swift test
+      - name: Test with coverage
+        run: swift test --enable-code-coverage
+      - name: Coverage gate (100% of Sources/SnappyStorage)
+        run: |
+          BIN_PATH=$(swift build --show-bin-path)
+          xcrun llvm-cov report \
+            "$BIN_PATH/SnappyStoragePackageTests.xctest/Contents/MacOS/SnappyStoragePackageTests" \
+            -instr-profile "$BIN_PATH/codecov/default.profdata" \
+            -ignore-filename-regex='Tests/|\.build/' \
+            > coverage.txt
+          cat coverage.txt
+          TOTAL_LINE=$(grep '^TOTAL' coverage.txt)
+          LINE_PCT=$(echo "$TOTAL_LINE" | awk '{ gsub("%","",$(NF-3)); print $(NF-3) }')
+          echo "Sources/ line coverage: $LINE_PCT%"
+          if [ "$LINE_PCT" != "100.00" ]; then
+            echo "Coverage gate failed: expected 100.00%, got $LINE_PCT%"
+            exit 1
+          fi

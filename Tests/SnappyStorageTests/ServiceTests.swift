@@ -37,6 +37,31 @@ final class ServiceTests: XCTestCase {
         XCTAssertEqual(service.fetch(id: obj.id)?.name, "test")
     }
 
+    func testCollectionPropertyLazyLoads() {
+        let service = makeService()
+        service.save(StoredObject(name: "via-collection", value: 1))
+        XCTAssertEqual(service.collection.count, 1)
+        XCTAssertEqual(service.collection.first?.name, "via-collection")
+    }
+
+    func testReplaceWithoutPriorLoad() {
+        let service = makeService()
+        let item = StoredObject(name: "fresh-replace", value: 1)
+        service.replace([item])
+        XCTAssertEqual(service.fetchAll().count, 1)
+        let reloaded = Service<StoredObject>(destination: .custom(tempDir.path))
+        XCTAssertEqual(reloaded.fetch(id: item.id)?.name, "fresh-replace")
+    }
+
+    func testPersistAfterUnloadWritesCurrentSnapshot() {
+        let service = makeService()
+        service.save(StoredObject(name: "before-unload", value: 1))
+        service.unload()
+        service.persist()
+        let reloaded = Service<StoredObject>(destination: .custom(tempDir.path))
+        XCTAssertTrue(reloaded.fetchAll().isEmpty)
+    }
+
     func testSaveMultiple() {
         let service = makeService()
         let items: Set<StoredObject> = [
@@ -62,6 +87,108 @@ final class ServiceTests: XCTestCase {
         XCTAssertEqual(service.fetchAll().count, 1)
         service.delete(obj)
         XCTAssertTrue(service.fetchAll().isEmpty)
+    }
+
+    func testDeleteMultiple() {
+        let service = makeService()
+        let a = StoredObject(name: "a", value: 1)
+        let b = StoredObject(name: "b", value: 2)
+        let c = StoredObject(name: "c", value: 3)
+        service.save([a, b, c])
+        service.delete([a, c])
+        XCTAssertEqual(service.fetchAll().count, 1)
+        XCTAssertEqual(service.fetch(id: b.id)?.name, "b")
+        XCTAssertNil(service.fetch(id: a.id))
+
+        let reloaded = Service<StoredObject>(destination: .custom(tempDir.path))
+        XCTAssertEqual(reloaded.fetchAll().count, 1)
+        XCTAssertEqual(reloaded.fetchAll().first?.name, "b")
+    }
+
+    func testReplaceSwapsCollection() {
+        let service = makeService()
+        let old = StoredObject(name: "old", value: 1)
+        service.save(old)
+        let replacement = StoredObject(name: "new", value: 2)
+        service.replace([replacement])
+        XCTAssertEqual(service.fetchAll().count, 1)
+        XCTAssertNil(service.fetch(id: old.id))
+        XCTAssertEqual(service.fetch(id: replacement.id)?.name, "new")
+
+        let reloaded = Service<StoredObject>(destination: .custom(tempDir.path))
+        XCTAssertEqual(reloaded.fetchAll().count, 1)
+        XCTAssertNil(reloaded.fetch(id: old.id))
+    }
+
+    func testBatchMutatesAndPersists() {
+        let service = makeService()
+        let keep = StoredObject(name: "keep", value: 1)
+        let drop = StoredObject(name: "drop", value: 2)
+        service.save([keep, drop])
+        service.batch { items in
+            items.remove(drop)
+            items.insert(StoredObject(name: "added", value: 3))
+        }
+        XCTAssertEqual(service.count, 2)
+        XCTAssertNil(service.fetch(id: drop.id))
+        XCTAssertNotNil(service.fetch(id: keep.id))
+
+        let reloaded = Service<StoredObject>(destination: .custom(tempDir.path))
+        XCTAssertEqual(reloaded.count, service.count)
+        XCTAssertEqual(reloaded.fetchAll().count, 2)
+    }
+
+    func testCountMatchesFetchAll() {
+        let service = makeService()
+        XCTAssertEqual(service.count, 0)
+        service.save(StoredObject(name: "a", value: 1))
+        XCTAssertEqual(service.count, 1)
+        XCTAssertEqual(service.count, service.fetchAll().count)
+        service.delete(service.fetchAll())
+        XCTAssertEqual(service.count, 0)
+        service.unload()
+        XCTAssertEqual(service.count, 0)
+    }
+
+    func testFetchIdNilWhenMissing() {
+        let service = makeService()
+        XCTAssertNil(service.fetch(id: "never-existed"))
+        let obj = StoredObject(name: "x", value: 1)
+        service.save(obj)
+        service.delete(obj)
+        XCTAssertNil(service.fetch(id: obj.id))
+    }
+
+    func testLazyLoadDefersCorruptFileDetection() throws {
+        let storage = Storage(location: Location(destination: .custom(tempDir.path), file: File(name: "StoredObject")))
+        try storage.write(Data("not json".utf8))
+
+        let service = Service<StoredObject>(destination: .custom(tempDir.path))
+        XCTAssertNil(service.loadError)
+
+        _ = service.count
+        XCTAssertNotNil(service.loadError)
+        XCTAssertTrue(service.fetchAll().isEmpty)
+    }
+
+    func testUnloadDropsCacheAndReloadsFromDisk() {
+        let service = makeService()
+        service.save(StoredObject(name: "cached", value: 1))
+        service.unload()
+        XCTAssertEqual(service.fetchAll().count, 1)
+        XCTAssertEqual(service.fetchAll().first?.name, "cached")
+    }
+
+    func testUnloadThenExternalCorruptionSurfacesOnNextRead() throws {
+        let service = makeService()
+        service.save(StoredObject(name: "good", value: 1))
+        service.unload()
+
+        let storage = Storage(location: Location(destination: .custom(tempDir.path), file: File(name: "StoredObject")))
+        try storage.write(Data("corrupt".utf8))
+
+        XCTAssertTrue(service.fetchAll().isEmpty)
+        XCTAssertNotNil(service.loadError)
     }
 
     // MARK: - Persistence
@@ -160,6 +287,24 @@ final class ServiceTests: XCTestCase {
     }
 
     // MARK: - Change hook
+
+    func testStep1APISurface() throws {
+        let service = makeService()
+        let a = StoredObject(name: "a", value: 1)
+        let b = StoredObject(name: "b", value: 2)
+        service.replace([a])
+        service.batch { $0.insert(b) }
+        service.save(StoredObject(name: "c", value: 3))
+        service.save([StoredObject(name: "d", value: 4)])
+        service.delete(a)
+        service.delete([b])
+        _ = service.count
+        _ = service.collection
+        _ = service.fetch(id: "missing")
+        service.unload()
+        service.reload()
+        try service.removeFile()
+    }
 
     func testCollectionDidChangeOverride() {
         final class TrackingService: Service<StoredObject> {

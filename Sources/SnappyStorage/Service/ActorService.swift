@@ -19,7 +19,7 @@ public actor ActorService<T: Storable & Sendable> {
     /// Stream of collection snapshots. Yields an empty set at `init` (no disk read has happened
     /// yet, since loading is lazy), then yields the true loaded collection as soon as any
     /// read or write path triggers the first load.
-    public let updates: AsyncStream<Set<T>>
+    public nonisolated let updates: AsyncStream<Set<T>>
 
     // MARK: - Lifecycle
 
@@ -53,7 +53,7 @@ public actor ActorService<T: Storable & Sendable> {
 
     public func fetchAll() -> Set<T> {
         loadIfNeeded()
-        return _collection ?? []
+        return _collection!
     }
 
     public func fetch(id: String) -> T? {
@@ -138,7 +138,7 @@ public actor ActorService<T: Storable & Sendable> {
     /// Mutable access to the loaded collection. Callers must call `loadIfNeeded()` first
     /// (or be in a path, like `replace`, that intentionally overwrites without reading).
     private var loadedCollection: Set<T> {
-        get { _collection ?? [] }
+        get { _collection! }
         set { _collection = newValue }
     }
 
@@ -152,12 +152,13 @@ public actor ActorService<T: Storable & Sendable> {
     }
 
     private func rebuildIndex() {
-        index = Dictionary(uniqueKeysWithValues: (_collection ?? []).map { ($0.id, $0) })
+        index = Dictionary(uniqueKeysWithValues: _collection!.map { ($0.id, $0) })
     }
 
-    private func persist() {
-        try? persistence.write(Array(_collection ?? []))
-        continuation.yield(_collection ?? [])
+    func persist() {
+        let snapshot = _collection ?? []
+        try? persistence.write(Array(snapshot))
+        continuation.yield(snapshot)
     }
 
     private static func load(persistence: Persistence) -> (Set<T>, Error?) {

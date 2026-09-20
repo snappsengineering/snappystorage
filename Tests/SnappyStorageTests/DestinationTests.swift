@@ -19,6 +19,18 @@ final class DestinationTests: XCTestCase {
         XCTAssertTrue(url.path.contains("Caches"))
         XCTAssertTrue(url.lastPathComponent == "Note.json")
     }
+
+    // MARK: - iCloud
+
+    func testICloudThrowsWhenContainerUnavailable() {
+        // Exercises `Destination.iCloud` → `ubiquityDocumentsURL()` when no ubiquity container exists.
+        let file = File(name: "Note", fileExtension: "json")
+        XCTAssertThrowsError(try Destination.iCloud.url(for: file)) { error in
+            guard case DestinationError.urlNotFound = error else {
+                return XCTFail("Expected urlNotFound, got \(error)")
+            }
+        }
+    }
 }
 
 extension Destination: Equatable {

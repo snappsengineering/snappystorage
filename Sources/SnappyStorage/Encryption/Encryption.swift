@@ -30,14 +30,12 @@ public struct Encryption: Sendable {
     }
 
     public func encrypt(_ data: Data) throws -> Data {
-        let sealed: AES.GCM.SealedBox
         do {
-            sealed = try AES.GCM.seal(data, using: key)
+            // AES.GCM.seal without an explicit nonce always uses the standard 12-byte nonce, so combined is non-nil.
+            return try AES.GCM.seal(data, using: key).combined!
         } catch {
             throw EncryptionError.encryptionFailed(error)
         }
-        guard let combined = sealed.combined else { throw EncryptionError.invalidData }
-        return combined
     }
 
     public func decrypt(_ data: Data) throws -> Data {

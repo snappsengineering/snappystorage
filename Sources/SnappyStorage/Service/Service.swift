@@ -15,7 +15,8 @@ open class Service<T: Storable> {
     /// `fetch(id:)`, `count`, or any write method) rather than eagerly in `init`.
     public var collection: Set<T> {
         loadIfNeeded()
-        return _collection ?? []
+        // `loadIfNeeded()` always assigns `.some` (possibly `[]`); never leaves `_collection` nil.
+        return _collection!
     }
 
     /// The number of items in `collection`. Triggers the same lazy load as `collection`.
@@ -147,7 +148,7 @@ open class Service<T: Storable> {
     /// Mutable access to the loaded collection. Callers must call `loadIfNeeded()` first
     /// (or be in a path, like `replace`, that intentionally overwrites without reading).
     private var loadedCollection: Set<T> {
-        get { _collection ?? [] }
+        get { _collection! } // every get path calls `loadIfNeeded()` first, or uses the setter (e.g. `replace`)
         set { _collection = newValue }
     }
 
@@ -160,7 +161,7 @@ open class Service<T: Storable> {
     }
 
     private func rebuildIndex() {
-        index = Dictionary(uniqueKeysWithValues: (_collection ?? []).map { ($0.id, $0) })
+        index = Dictionary(uniqueKeysWithValues: _collection!.map { ($0.id, $0) })
     }
 
     func persist() {

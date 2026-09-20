@@ -35,6 +35,16 @@ final class EncryptionTests: XCTestCase {
         XCTAssertThrowsError(try enc.decrypt(Data("not-a-sealed-box".utf8)))
     }
 
+    func testEncryptFailureSurfacesEncryptionError() {
+        let badKey = SymmetricKey(data: Data(repeating: 1, count: 17))
+        let enc = Encryption(key: badKey)
+        XCTAssertThrowsError(try enc.encrypt(Data("x".utf8))) { error in
+            guard case EncryptionError.encryptionFailed = error else {
+                return XCTFail("Expected encryptionFailed, got \(error)")
+            }
+        }
+    }
+
     func testSymmetricKeyFromEmptyDataIsNil() {
         XCTAssertNil(SymmetricKey(dataRepresentation: Data()))
     }
