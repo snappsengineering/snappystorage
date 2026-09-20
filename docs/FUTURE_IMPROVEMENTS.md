@@ -54,6 +54,31 @@ public struct PartitionPolicy: Equatable, Sendable {
 Partition key resolution (which field on `T` drives the bucket) is a `Service`-level concern,
 not a `Layout` concern — keep `Layout`-equivalent types `Equatable`, no `KeyPath` on them.
 
+## Bulk replace for collections
+
+`Service`/`ActorService` have `save(_:)` for upsert but no full-array swap. A `replace(_
+items: [T])` that clears and re-persists the whole collection in one write would help
+call sites that pull a fresh full list from an API/sync source (e.g. snappycloud `pull()`)
+and want to overwrite rather than merge. Explored on the (deleted)
+`feature/array-backed-collections` branch alongside a `Set<T>` → `[T]` rewrite; the
+`Set`→`[T]` part was rejected (breaking change, conflicts with the "keep `Set<T>` at
+Service level" principle above), but `replace(_:)` itself doesn't require that rewrite —
+it can be added as `collection = Set(items); persist()` without touching the public
+collection type.
+
+## Forgiving migration decode
+
+Today, adding a new non-optional property to a `Storable` model breaks decoding of every
+already-persisted file for that type until it's rewritten — there's no schema migration
+story. Explored on the (deleted) `storage-alt` branch via a `MigrationDecoder` that merges
+on-disk JSON with `T()` defaults before decoding (missing/null keys fall back to the
+default). The idea is worth revisiting, but not the exact shape shipped there — it required
+adding `init()` to the `Storable` protocol (source-breaking for every model) and did the
+merge via `JSONSerialization` round-tripping. A lighter version — e.g. leaning on
+`Decodable`'s `decodeIfPresent` per-property, or a `CodingKeys`-driven default-fill without
+a protocol-wide `init()` requirement — would get the same migration safety without the
+breaking change.
+
 ## Query / predicate layer
 
 No shared query API exists today — consumers use named fetch methods and view-model-side
