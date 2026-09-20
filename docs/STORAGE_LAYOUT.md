@@ -2,7 +2,7 @@
 
 SnappyStorage supports multiple **on-disk layouts** for `Service<T>` collections. Pick per collection — habits may stay on the default single-file layout; activity history may shard or chunk.
 
-**Framework rules:** `CODING_STANDARDS.md` Rule 14 — `Layout` in `Data/`; `Destination` + `File` + `Location` resolve paths; internal `Storage` reads/writes bytes (sync); `Service` + `Payload` encode/encrypt and own the in-memory cache.
+**Layering:** `Destination` + `File` + `Location` resolve paths; internal `Storage` reads/writes bytes (sync); `Service` + `Persistence` encode/encrypt and own the in-memory cache.
 
 Display **order is a UI concern** (sort/filter in the view model). On disk we optimize for **identity, lookup, and I/O unit size**.
 

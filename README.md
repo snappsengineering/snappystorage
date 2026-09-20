@@ -29,7 +29,7 @@ Add to your `Package.swift`:
 
 ```swift
 // Track a released version
-.package(url: "https://github.com/snappsengineering/snappystorage.git", from: "1.0.0")
+.package(url: "https://github.com/snappsengineering/snappystorage.git", from: "2.0.0")
 ```
 
 ## Quick Start
@@ -136,7 +136,7 @@ try blobs.remove()
 
 ## Shipped vs planned
 
-Everything above is shipped and tested (≥95% line coverage). Chunked/per-record/partitioned on-disk layouts and a query/predicate layer are **designed but not implemented** — see [`docs/FUTURE_IMPROVEMENTS.md`](docs/FUTURE_IMPROVEMENTS.md) and [`docs/STORAGE_LAYOUT.md`](docs/STORAGE_LAYOUT.md). `Service` always uses one JSON file per collection today.
+Everything above is shipped and tested (100% line coverage, CI-gated). Chunked/per-record/partitioned on-disk layouts and a query/predicate layer are **designed but not implemented** — see [`docs/FUTURE_IMPROVEMENTS.md`](docs/FUTURE_IMPROVEMENTS.md) and [`docs/STORAGE_LAYOUT.md`](docs/STORAGE_LAYOUT.md). `Service` always uses one JSON file per collection today.
 
 ## Conforming your model
 

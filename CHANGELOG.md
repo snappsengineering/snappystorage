@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+_Nothing yet._
+
+## 2.0.0
+
 ### Removed
 
 - `PublishedSingleValueService` — zero consumers, duplicate of the `PublishedService` pattern for a different base.
@@ -24,4 +28,4 @@
 
 - `BlobService` — public raw-`Data` storage for blobs (PDFs, images) that don't fit the `Storable` JSON model. Replaces the `main`-branch public `Storage` class for that use case.
 - `Service.loadError` / `Service.lastError` — surface load and persist failures instead of silently swallowing them.
-- Test coverage: 96.6% line coverage (up from an unmeasured baseline), 67 tests.
+- Test coverage: 100% line coverage (up from an unmeasured baseline), 104 tests. CI now gates merges on 100% `Sources/SnappyStorage` line coverage.

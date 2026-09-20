@@ -30,41 +30,11 @@ initialization throw, for callers that would rather fail loudly than silently st
 
 ## Partitioned layout (by attribute range)
 
-**Status:** design only, not implemented. See [`STORAGE_LAYOUT.md`](STORAGE_LAYOUT.md) for the
-full layout comparison (default / chunked / per-record / partitioned).
-
-Split on-disk files by a **model attribute** (date month, year, week, or app-defined string
-key) — not by chunk index or `id`:
-
-```
-Activity/2024-08.json   →  all Activity rows whose partition key is August 2024
-```
-
-Planned shape:
-
-```swift
-public struct PartitionPolicy: Equatable, Sendable {
-    public enum Granularity: Equatable, Sendable {
-        case calendarMonth, calendarYear, calendarWeek
-    }
-    public var granularity: Granularity
-}
-```
-
-Partition key resolution (which field on `T` drives the bucket) is a `Service`-level concern,
-not a `Layout` concern — keep `Layout`-equivalent types `Equatable`, no `KeyPath` on them.
-
-## Bulk replace for collections
-
-`Service`/`ActorService` have `save(_:)` for upsert but no full-array swap. A `replace(_
-items: [T])` that clears and re-persists the whole collection in one write would help
-call sites that pull a fresh full list from an API/sync source (e.g. snappycloud `pull()`)
-and want to overwrite rather than merge. Explored on the (deleted)
-`feature/array-backed-collections` branch alongside a `Set<T>` → `[T]` rewrite; the
-`Set`→`[T]` part was rejected (breaking change, conflicts with the "keep `Set<T>` at
-Service level" principle above), but `replace(_:)` itself doesn't require that rewrite —
-it can be added as `collection = Set(items); persist()` without touching the public
-collection type.
+**Status:** design only, not implemented. Splits on-disk files by a **model attribute**
+(date month, year, week, or app-defined string key) instead of chunk index or `id`. Full
+design — planned `PartitionPolicy` shape, encryption unit, API options, migration path — lives
+in [`STORAGE_LAYOUT.md`](STORAGE_LAYOUT.md) § Partitioned by attribute range; not duplicated
+here.
 
 ## Forgiving migration decode
 
@@ -90,7 +60,8 @@ partitioned layout ships.
 ## Suggested order
 
 1. Strict decrypt mode (small, opt-in).
-2. Chunked layout, piloted on one real, growing collection.
+2. Chunked layout, piloted on one real, growing collection — note this re-introduces
+   scaffolding cut in 2.0 (see CHANGELOG "Removed"); revisit the design, don't just restore it.
 3. Partitioned layout (month buckets) — alternative/complement to chunked for time-series data.
 4. Query/predicate layer, once there's a second layout to query against.
 
