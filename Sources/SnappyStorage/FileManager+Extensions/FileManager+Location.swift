@@ -9,10 +9,16 @@ extension FileManager {
         )
     }
 
-    func ubiquityDocumentsURL(folderName: String = "Documents") throws -> URL {
+    static func defaultUbiquityContainerURL(for identifier: String?) -> URL? {
+        FileManager.default.url(forUbiquityContainerIdentifier: identifier)
+    }
+
+    func ubiquityDocumentsURL(
+        folderName: String = "Documents",
+        containerURLProvider: (String?) -> URL? = FileManager.defaultUbiquityContainerURL
+    ) throws -> URL {
         try DestinationError.requiredURL(
-            url(forUbiquityContainerIdentifier: nil)?
-                .appendingPathComponent(folderName),
+            containerURLProvider(nil)?.appendingPathComponent(folderName),
             detail: "iCloud container not available"
         )
     }

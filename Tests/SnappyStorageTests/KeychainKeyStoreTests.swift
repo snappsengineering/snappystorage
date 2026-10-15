@@ -1,4 +1,5 @@
 import CryptoKit
+import Security
 import XCTest
 @testable import SnappyStorage
 
@@ -64,9 +65,89 @@ final class KeychainKeyStoreTests: XCTestCase {
         XCTAssertEqual(store.account, "snappystorage.encryptionKey")
     }
 
+    func testSaveFailedWhenAddFails() {
+        let backend = FakeKeychainBackend(
+            deleteStatus: errSecSuccess,
+            addStatus: errSecDuplicateItem
+        )
+        let store = KeychainKeyStore(service: "test", account: "acct", backend: backend)
+        XCTAssertThrowsError(try store.save(Encryption.generateKey())) { error in
+            guard case KeychainError.saveFailed = error else {
+                return XCTFail("Expected saveFailed, got \(error)")
+            }
+        }
+    }
+
+    func testLoadFailedWhenCopyMatchingFails() {
+        let backend = FakeKeychainBackend(copyMatchingStatus: errSecAuthFailed)
+        let store = KeychainKeyStore(service: "test", account: "acct", backend: backend)
+        XCTAssertThrowsError(try store.load()) { error in
+            guard case KeychainError.loadFailed = error else {
+                return XCTFail("Expected loadFailed, got \(error)")
+            }
+        }
+    }
+
+    func testDeleteFailedOnExplicitDelete() {
+        let backend = FakeKeychainBackend(deleteStatus: errSecAuthFailed)
+        let store = KeychainKeyStore(service: "test", account: "acct", backend: backend)
+        XCTAssertThrowsError(try store.delete()) { error in
+            guard case KeychainError.deleteFailed = error else {
+                return XCTFail("Expected deleteFailed, got \(error)")
+            }
+        }
+    }
+
+    func testDeleteFailedDuringSavePreDelete() {
+        let backend = FakeKeychainBackend(deleteStatus: errSecAuthFailed)
+        let store = KeychainKeyStore(service: "test", account: "acct", backend: backend)
+        XCTAssertThrowsError(try store.save(Encryption.generateKey())) { error in
+            guard case KeychainError.deleteFailed = error else {
+                return XCTFail("Expected deleteFailed, got \(error)")
+            }
+        }
+    }
+
+    func testInvalidKeyDataWhenStoredBytesAreEmpty() {
+        let backend = FakeKeychainBackend(
+            copyMatchingStatus: errSecSuccess,
+            copyMatchingData: Data()
+        )
+        let store = KeychainKeyStore(service: "test", account: "acct", backend: backend)
+        XCTAssertThrowsError(try store.load()) { error in
+            guard case KeychainError.invalidKeyData = error else {
+                return XCTFail("Expected invalidKeyData, got \(error)")
+            }
+        }
+    }
+
     // MARK: - Helpers
 
     private func keyData(_ key: SymmetricKey) -> Data {
         key.withUnsafeBytes { Data($0) }
+    }
+}
+
+// MARK: - Fake keychain backend
+
+private struct FakeKeychainBackend: KeychainBackend, Sendable {
+    var deleteStatus: OSStatus = errSecSuccess
+    var addStatus: OSStatus = errSecSuccess
+    var copyMatchingStatus: OSStatus = errSecItemNotFound
+    var copyMatchingData: Data?
+
+    func add(_ query: CFDictionary, result: UnsafeMutablePointer<CFTypeRef?>?) -> OSStatus {
+        addStatus
+    }
+
+    func copyMatching(_ query: CFDictionary, result: UnsafeMutablePointer<CFTypeRef?>?) -> OSStatus {
+        if copyMatchingStatus == errSecSuccess, let copyMatchingData {
+            result?.pointee = copyMatchingData as CFTypeRef
+        }
+        return copyMatchingStatus
+    }
+
+    func delete(_ query: CFDictionary) -> OSStatus {
+        deleteStatus
     }
 }

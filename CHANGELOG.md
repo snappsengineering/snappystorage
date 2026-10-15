@@ -2,26 +2,44 @@
 
 ## Unreleased
 
-### Removed
+_Nothing yet._
 
-- `PublishedSingleValueService` — zero consumers, duplicate of the `PublishedService` pattern for a different base.
-- `Layout`, `ChunkPolicy`, `AutomaticThresholds`, `CollectionLayout` — unimplemented (3 of 4 cases threw at runtime), zero consumers. Design preserved in `docs/STORAGE_LAYOUT.md`; will return once chunked/perRecord storage actually ships.
-- `ServiceBacking`, `Payload` — folded into internal `Persistence`.
-- `EncryptionError.keyGenerationFailed`, `FileManager.modificationDate(at:)` — dead code.
-- `AsyncStorage`, `SingleValueService.exists`, `Storage.lastUpdated`, `Destination.makeURL` (already absent) — confirmed gone.
+## 2.0.0
 
-### Changed
+### Breaking
 
-- `Storage`, `Location`, `File` dropped their phantom generic type parameter.
-- `ActorService.updates` is now `public let` instead of a computed property; `ActorService` gained `deinit { continuation.finish() }`.
-- `Storable.generateHexID(length:)` now actually respects `length` (previously always produced ≤6 hex digits of entropy regardless of the requested length).
-- `Service.init` no longer `fatalError`s on a corrupt/undecryptable file. It starts with an empty collection, leaves the file untouched, and sets `loadError`.
-- `Service` gained `open func collectionDidChange()`, called once after every successful `save`/`delete`. `PublishedService` now overrides this single hook instead of overriding `save`/`delete` three times each.
-- `SingleValueService` gained `func load() throws -> T?`; `fetch()` keeps its old lenient behavior (`try? load()`).
-- `Destination.cloud` renamed to `.iCloud`; `.cloud` kept as a `@available(*, deprecated)` alias for one release.
+- `ActorService.init` no longer throws. A corrupt/undecryptable file leaves the collection empty, the file untouched, and sets `ActorService.loadError` (same soft-fail as `Service`).
+- `Destination.cloud` alias removed. Use `.iCloud`.
 
 ### Added
 
-- `BlobService` — public raw-`Data` storage for blobs (PDFs, images) that don't fit the `Storable` JSON model. Replaces the `main`-branch public `Storage` class for that use case.
-- `Service.loadError` / `Service.lastError` — surface load and persist failures instead of silently swallowing them.
-- Test coverage: 96.6% line coverage (up from an unmeasured baseline), 67 tests.
+- Batch API on `Service` and `ActorService`: `delete(Set<T>)`, `replace(_:)`, `batch(_:)`. Each persists once.
+- O(1) id index: `fetch(id:)` and `count`.
+- Lazy load: `unload()` drops the in-memory collection; next access reloads from disk.
+- Concurrency and fuzz-style round-trip tests.
+- 100% line coverage (116 tests), CI-gated.
+
+## 1.0.0
+
+### Removed
+
+- `PublishedSingleValueService` (no consumers).
+- `Layout`, `ChunkPolicy`, `AutomaticThresholds`, `CollectionLayout`: unimplemented, no consumers. Design kept in `docs/STORAGE_LAYOUT.md`.
+- `ServiceBacking`, `Payload`: folded into internal `Persistence`.
+- `AsyncStorage`, `SingleValueService.exists`, `Storage.lastUpdated`, `EncryptionError.keyGenerationFailed`, `FileManager.modificationDate(at:)`: dead code.
+
+### Changed
+
+- `Storage`, `Location`, `File` dropped their unused generic parameter. `Storage` is now internal.
+- `ActorService.updates` is `public let`; `ActorService` finishes its stream on `deinit`.
+- `Storable.generateHexID(length:)` now respects `length`.
+- `Service.init` no longer `fatalError`s on a corrupt/undecryptable file: empty collection, file untouched, `loadError` set.
+- `Service.collectionDidChange()` hook, called after every successful save/delete. `PublishedService` overrides it instead of overriding each write method.
+- `SingleValueService.load() throws -> T?` added; `fetch()` stays lenient (`try? load()`).
+- `Destination.cloud` renamed `.iCloud` (`.cloud` kept as a deprecated alias).
+
+### Added
+
+- `BlobService`: raw `Data` storage for PDFs/images that aren't `Storable`.
+- `Service.loadError` / `Service.lastError`.
+- 96.6% line coverage (67 tests).

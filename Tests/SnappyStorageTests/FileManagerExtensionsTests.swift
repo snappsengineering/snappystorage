@@ -35,6 +35,31 @@ final class FileManagerExtensionsTests: XCTestCase {
         XCTAssertNoThrow(try FileManager.default.removeIfExists(at: missing))
     }
 
+    func testRemoveIfExistsThrowsIOErrorWhenRemoveFails() throws {
+        try FileManager.default.createDirectory(at: tempDir, withIntermediateDirectories: true)
+        let url = tempDir.appendingPathComponent("immutable")
+        try Data("x".utf8).write(to: url)
+        try FileManager.default.setAttributes([.immutable: true], ofItemAtPath: url.path)
+        defer { try? FileManager.default.setAttributes([.immutable: false], ofItemAtPath: url.path) }
+        XCTAssertThrowsError(try FileManager.default.removeIfExists(at: url)) { error in
+            guard case StorageError.ioError = error else {
+                return XCTFail("Expected ioError, got \(error)")
+            }
+        }
+    }
+
+    func testWriteAtomicThrowsIOErrorWhenWriteFails() throws {
+        try FileManager.default.createDirectory(at: tempDir, withIntermediateDirectories: true)
+        let blocker = tempDir.appendingPathComponent("blocker")
+        try Data("x".utf8).write(to: blocker)
+        let blockedFile = blocker.appendingPathComponent("nested.json")
+        XCTAssertThrowsError(try Data("y".utf8).writeAtomic(to: blockedFile)) { error in
+            guard case StorageError.ioError = error else {
+                return XCTFail("Expected ioError, got \(error)")
+            }
+        }
+    }
+
     // MARK: - data(at:)
 
     func testDataAtThrowsFileDoesNotExist() {
@@ -54,6 +79,26 @@ final class FileManagerExtensionsTests: XCTestCase {
                 return XCTFail("Expected ioError, got \(error)")
             }
         }
+    }
+
+    // MARK: - iCloud URL
+
+    func testUbiquityDocumentsURLThrowsWhenContainerUnavailable() {
+        XCTAssertThrowsError(
+            try FileManager.default.ubiquityDocumentsURL(containerURLProvider: { _ in nil })
+        ) { error in
+            guard case DestinationError.urlNotFound = error else {
+                return XCTFail("Expected urlNotFound, got \(error)")
+            }
+        }
+    }
+
+    func testUbiquityDocumentsURLAppendsDocumentsFolder() throws {
+        let url = try FileManager.default.ubiquityDocumentsURL(
+            folderName: "Documents",
+            containerURLProvider: { _ in URL(fileURLWithPath: "/tmp/fake-icloud") }
+        )
+        XCTAssertEqual(url.path, "/tmp/fake-icloud/Documents")
     }
 
     // MARK: - ensureDirectory failure

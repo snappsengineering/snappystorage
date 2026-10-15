@@ -6,14 +6,6 @@ public enum Destination: Sendable {
     case custom(String)
 }
 
-// MARK: - Deprecated aliases
-
-extension Destination {
-
-    @available(*, deprecated, renamed: "iCloud")
-    public static var cloud: Destination { .iCloud }
-}
-
 // MARK: - URL resolution
 
 extension Destination {

@@ -10,7 +10,7 @@ final class AsyncNoteViewModel: ObservableObject {
 
     @Published var notes: [Note] = []
 
-    private let service = try! ActorService<Note>(
+    private let service = ActorService<Note>(
         destination: .local(.documentDirectory),
         fileName: "NotesActor"
     )
