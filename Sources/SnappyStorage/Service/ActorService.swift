@@ -142,6 +142,7 @@ public actor ActorService<T: Storable & Sendable> {
     public func flush() {
         coalesceTask?.cancel()
         coalesceTask = nil
+        guard _collection != nil else { return }
         performPersist(allowDespiteLoadFailure: false)
     }
 

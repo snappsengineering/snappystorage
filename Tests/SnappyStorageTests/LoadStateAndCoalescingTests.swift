@@ -90,4 +90,24 @@ final class LoadStateAndCoalescingTests: XCTestCase {
         try? await Task.sleep(for: .milliseconds(50))
         XCTAssertEqual(fresh.loadState, .loaded(count: 1))
     }
+
+    func testFlushOnUnloadedInstanceDoesNotTruncateDisk() async throws {
+        let writer = Service<StoredObject>(destination: .custom(tempDir.path))
+        writer.save(StoredObject(name: "keep-bytes", value: 1))
+
+        let before = try Storage(
+            location: Location(destination: .custom(tempDir.path), file: File(name: "StoredObject"))
+        ).read()
+
+        let fresh = Service<StoredObject>(destination: .custom(tempDir.path))
+        fresh.flush()
+
+        let after = try Storage(
+            location: Location(destination: .custom(tempDir.path), file: File(name: "StoredObject"))
+        ).read()
+        XCTAssertEqual(after, before)
+
+        let state = await fresh.load()
+        XCTAssertEqual(state, .loaded(count: 1))
+    }
 }

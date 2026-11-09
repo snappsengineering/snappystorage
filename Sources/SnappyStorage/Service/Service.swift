@@ -160,6 +160,10 @@ open class Service<T: Storable> {
     public func flush() {
         coalesceWorkItem?.cancel()
         coalesceWorkItem = nil
+        stateLock.lock()
+        let hasLoadedCollection = _collection != nil
+        stateLock.unlock()
+        guard hasLoadedCollection else { return }
         performPersist(allowDespiteLoadFailure: false)
     }
 
