@@ -1,5 +1,9 @@
 import Foundation
+#if canImport(CryptoKit)
 import CryptoKit
+#elseif canImport(Crypto)
+@preconcurrency import Crypto
+#endif
 
 public struct Encryption: Sendable {
 
@@ -18,12 +22,16 @@ public struct Encryption: Sendable {
         self.key = SymmetricKey(data: hash)
     }
 
+    #if canImport(Security)
     /// Loads an existing key from the keychain or creates and stores a new one.
     public init(keychain store: KeychainKeyStore) throws {
         self.key = try store.loadOrCreate()
     }
+    #endif
 
     // MARK: - Public
+
+    public var symmetricKey: SymmetricKey { key }
 
     public static func generateKey() -> SymmetricKey {
         SymmetricKey(size: .bits256)

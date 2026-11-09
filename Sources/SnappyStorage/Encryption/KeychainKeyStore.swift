@@ -1,6 +1,11 @@
-import CryptoKit
+#if canImport(Security)
 import Foundation
 import Security
+#if canImport(CryptoKit)
+import CryptoKit
+#elseif canImport(Crypto)
+import Crypto
+#endif
 
 protocol KeychainBackend: Sendable {
     func add(_ query: CFDictionary, result: UnsafeMutablePointer<CFTypeRef?>?) -> OSStatus
@@ -101,3 +106,4 @@ public struct KeychainKeyStore: Sendable {
         ]
     }
 }
+#endif

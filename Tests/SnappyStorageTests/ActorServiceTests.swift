@@ -249,6 +249,24 @@ final class ActorServiceTests: XCTestCase {
         XCTAssertEqual(try storage.read(), Data("not json".utf8))
     }
 
+    func testPersistBlockedWhenLoadFailed() async throws {
+        let storage = Storage(location: Location(destination: .custom(tempDir.path), file: File(name: "StoredObject")))
+        try storage.write(Data("bad".utf8))
+        let svc = ActorService<StoredObject>(destination: .custom(tempDir.path))
+        _ = await svc.fetchAll()
+        await svc.save(StoredObject(name: "nope", value: 1))
+        await svc.flush()
+        let lastError = await svc.lastError
+        XCTAssertEqual(lastError as? ServiceError, .persistBlockedByLoadFailure)
+        XCTAssertEqual(try storage.read(), Data("bad".utf8))
+    }
+
+    func testLoadStateAfterLoad() async throws {
+        let svc = ActorService<StoredObject>(destination: .custom(tempDir.path))
+        let state = await svc.load()
+        XCTAssertEqual(state, .empty)
+    }
+
     func testMissingFileReturnsEmptyCollection() async throws {
         let svc = ActorService<StoredObject>(destination: .custom(tempDir.path))
         let all = await svc.fetchAll()

@@ -1,12 +1,17 @@
 import Foundation
 
+public enum SingleValueLoadState: Sendable, Equatable {
+    case notRead
+    case present
+    case missing
+    case failed
+}
+
 open class SingleValueService<T: Codable> {
 
-    // MARK: - Properties
-
     private let persistence: Persistence
-
-    // MARK: - Lifecycle
+    public private(set) var lastError: Error?
+    public private(set) var lastLoadState: SingleValueLoadState = .notRead
 
     public init(
         destination: Destination = .local(.documentDirectory),
@@ -26,16 +31,21 @@ open class SingleValueService<T: Codable> {
         )
     }
 
-    // MARK: - Read
-
-    /// Throwing read — surfaces corrupt data or decrypt failure instead of silently
-    /// returning `nil`. Prefer this over `fetch()` when overwriting with a default
-    /// value on `nil` would destroy an undecryptable-but-recoverable file.
     public func load() throws -> T? {
         do {
-            return try persistence.read(T.self)
+            let value = try persistence.read(T.self)
+            lastLoadState = .present
+            lastError = nil
+            return value
         } catch StorageError.fileDoesNotExist {
+            lastLoadState = .missing
+            lastError = nil
             return nil
+        } catch {
+            lastLoadState = .failed
+            lastError = error
+            StorageLog.warning("SingleValueService load failed: \(error.localizedDescription)", category: "SingleValue")
+            throw error
         }
     }
 
@@ -43,13 +53,19 @@ open class SingleValueService<T: Codable> {
         try? load()
     }
 
-    // MARK: - Write
-
     public func save(_ value: T) throws {
         try persistence.write(value)
+        lastError = nil
+        lastLoadState = .present
     }
 
     public func remove() throws {
         try persistence.remove()
+        lastError = nil
+        lastLoadState = .missing
+    }
+
+    public func backupFile(suffix: String = "bak") throws -> URL? {
+        try persistence.createBackup(suffix: suffix)
     }
 }

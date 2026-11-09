@@ -10,7 +10,11 @@ extension FileManager {
     }
 
     static func defaultUbiquityContainerURL(for identifier: String?) -> URL? {
-        FileManager.default.url(forUbiquityContainerIdentifier: identifier)
+        #if os(iOS) || os(macOS) || os(tvOS) || os(watchOS) || os(visionOS)
+        return FileManager.default.url(forUbiquityContainerIdentifier: identifier)
+        #else
+        return nil
+        #endif
     }
 
     func ubiquityDocumentsURL(

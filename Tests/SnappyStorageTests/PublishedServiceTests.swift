@@ -1,3 +1,4 @@
+#if canImport(Combine)
 import XCTest
 @testable import SnappyStorage
 
@@ -50,3 +51,4 @@ final class PublishedServiceTests: XCTestCase {
         XCTAssertTrue(service.published.isEmpty)
     }
 }
+#endif
