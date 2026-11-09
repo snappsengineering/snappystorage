@@ -26,11 +26,7 @@ open class Service<T: Storable> {
     }
 
   public var loadState: CollectionLoadState {
-        stateLock.lock()
-        defer { stateLock.unlock() }
-        guard let collection = _collection else { return .notLoaded }
-        if loadError != nil { return .failed }
-        return collection.isEmpty ? .empty : .loaded(count: collection.count)
+        lockedLoadState()
     }
 
     public private(set) var loadError: Error?
@@ -72,7 +68,7 @@ open class Service<T: Storable> {
         await withCheckedContinuation { continuation in
             DispatchQueue.global(qos: .userInitiated).async { [self] in
                 loadIfNeeded()
-                continuation.resume(returning: loadState)
+                continuation.resume(returning: lockedLoadState())
             }
         }
     }
@@ -222,6 +218,14 @@ open class Service<T: Storable> {
         _collection = collection
         index = idx
         stateLock.unlock()
+    }
+
+    private func lockedLoadState() -> CollectionLoadState {
+        stateLock.lock()
+        defer { stateLock.unlock() }
+        guard let collection = _collection else { return .notLoaded }
+        if loadError != nil { return .failed }
+        return collection.isEmpty ? .empty : .loaded(count: collection.count)
     }
 
     private func loadIfNeeded() {
