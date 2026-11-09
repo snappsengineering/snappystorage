@@ -1,4 +1,9 @@
+#if canImport(Security)
+#if canImport(CryptoKit)
 import CryptoKit
+#elseif canImport(Crypto)
+import Crypto
+#endif
 import Security
 import XCTest
 @testable import SnappyStorage
@@ -151,3 +156,4 @@ private struct FakeKeychainBackend: KeychainBackend, Sendable {
         deleteStatus
     }
 }
+#endif

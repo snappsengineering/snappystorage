@@ -25,12 +25,14 @@ final class ErrorDescriptionTests: XCTestCase {
 
     // MARK: - KeychainError
 
+    #if canImport(Security)
     func testKeychainErrorDescriptions() {
         XCTAssertNotNil(KeychainError.saveFailed(-1).errorDescription)
         XCTAssertNotNil(KeychainError.loadFailed(-1).errorDescription)
         XCTAssertNotNil(KeychainError.deleteFailed(-1).errorDescription)
         XCTAssertEqual(KeychainError.invalidKeyData.errorDescription, "Keychain item is not a valid encryption key")
     }
+    #endif
 
     // MARK: - EncoderError
 
@@ -38,6 +40,10 @@ final class ErrorDescriptionTests: XCTestCase {
         let underlying = NSError(domain: "t", code: 1)
         XCTAssertNotNil(EncoderError.encodingFailed(underlying).errorDescription)
         XCTAssertNotNil(EncoderError.decodingFailed(underlying).errorDescription)
+    }
+
+    func testServiceErrorIsEquatable() {
+        XCTAssertEqual(ServiceError.persistBlockedByLoadFailure, ServiceError.persistBlockedByLoadFailure)
     }
 
     // MARK: - DestinationError

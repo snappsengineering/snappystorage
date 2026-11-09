@@ -1,4 +1,8 @@
+#if canImport(CryptoKit)
 import CryptoKit
+#elseif canImport(Crypto)
+import Crypto
+#endif
 import XCTest
 @testable import SnappyStorage
 

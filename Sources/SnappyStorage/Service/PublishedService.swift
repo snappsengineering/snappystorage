@@ -1,13 +1,10 @@
-import Foundation
+#if canImport(Combine)
 import Combine
+import Foundation
 
 open class PublishedService<T: Storable>: Service<T>, ObservableObject {
 
-    // MARK: - Properties
-
     @Published public var published: Set<T> = []
-
-    // MARK: - Lifecycle
 
     public override init(
         destination: Destination = .local(.documentDirectory),
@@ -15,7 +12,8 @@ open class PublishedService<T: Storable>: Service<T>, ObservableObject {
         fileExtension: String = "json",
         jsonEncoder: JSONEncoder = JSONEncoder(),
         jsonDecoder: JSONDecoder = JSONDecoder(),
-        encryption: Encryption? = nil
+        encryption: Encryption? = nil,
+        configuration: ServiceConfiguration = ServiceConfiguration()
     ) {
         super.init(
             destination: destination,
@@ -23,14 +21,14 @@ open class PublishedService<T: Storable>: Service<T>, ObservableObject {
             fileExtension: fileExtension,
             jsonEncoder: jsonEncoder,
             jsonDecoder: jsonDecoder,
-            encryption: encryption
+            encryption: encryption,
+            configuration: configuration
         )
         published = collection
     }
-
-    // MARK: - Change hook
 
     open override func collectionDidChange() {
         published = collection
     }
 }
+#endif

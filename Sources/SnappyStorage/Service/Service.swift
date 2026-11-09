@@ -1,38 +1,38 @@
 import Foundation
-import os
 
 open class Service<T: Storable> {
 
-    // MARK: - Properties
+  // MARK: - Properties
 
     private let persistence: Persistence
-    private static var logger: Logger { Logger(subsystem: "com.snappsengineering.snappystorage", category: "\(T.self)") }
+    private let configuration: ServiceConfiguration
+    private static var logCategory: String { "\(T.self)" }
 
     private var _collection: Set<T>?
     private var index: [String: T] = [:]
+    private let stateLock = NSLock()
 
-    /// The in-memory collection. Loaded lazily from disk on first access (here, `fetchAll()`,
-    /// `fetch(id:)`, `count`, or any write method) rather than eagerly in `init`.
+    private var coalesceWorkItem: DispatchWorkItem?
+    private let persistQueue = DispatchQueue(label: "com.snappsengineering.snappystorage.persist")
+
     public var collection: Set<T> {
         loadIfNeeded()
-        // `loadIfNeeded()` always assigns `.some` (possibly `[]`); never leaves `_collection` nil.
         return _collection!
     }
 
-    /// The number of items in `collection`. Triggers the same lazy load as `collection`.
     public var count: Int {
         loadIfNeeded()
         return index.count
     }
 
-    /// Set when the on-disk file exists but failed to load (corrupt data, wrong encryption key).
-    /// The file is left untouched; `collection` starts empty so the app doesn't crash.
-    public private(set) var loadError: Error?
+  public var loadState: CollectionLoadState {
+        lockedLoadState()
+    }
 
-    /// Set when the most recent `persist()` (triggered by `save`/`delete`) failed to write.
+    public private(set) var loadError: Error?
     public private(set) var lastError: Error?
 
-    // MARK: - Lifecycle
+  // MARK: - Lifecycle
 
     public init(
         destination: Destination = .local(.documentDirectory),
@@ -40,8 +40,10 @@ open class Service<T: Storable> {
         fileExtension: String = "json",
         jsonEncoder: JSONEncoder = JSONEncoder(),
         jsonDecoder: JSONDecoder = JSONDecoder(),
-        encryption: Encryption? = nil
+        encryption: Encryption? = nil,
+        configuration: ServiceConfiguration = ServiceConfiguration()
     ) {
+        self.configuration = configuration
         self.persistence = Persistence(
             destination: destination,
             fileName: fileName ?? "\(T.self)",
@@ -52,7 +54,26 @@ open class Service<T: Storable> {
         )
     }
 
-    // MARK: - Read
+  // MARK: - Load
+
+    /// Loads and decrypts the backing file on a background queue; safe to call before reads on the main thread.
+    public func preload() {
+        DispatchQueue.global(qos: .userInitiated).async { [self] in
+            loadIfNeeded()
+        }
+    }
+
+    @discardableResult
+    public func load() async -> CollectionLoadState {
+        await withCheckedContinuation { continuation in
+            DispatchQueue.global(qos: .userInitiated).async { [self] in
+                loadIfNeeded()
+                continuation.resume(returning: lockedLoadState())
+            }
+        }
+    }
+
+  // MARK: - Read
 
     public func fetchAll() -> Set<T> {
         collection
@@ -63,116 +84,217 @@ open class Service<T: Storable> {
         return index[id]
     }
 
-    // MARK: - Write
+  // MARK: - Write
 
     open func save(_ item: T) {
         loadIfNeeded()
-        loadedCollection.upsert(item)
-        index[item.id] = item
-        persist()
+        mutateLoaded { collection, index in
+            collection.upsert(item)
+            index[item.id] = item
+        }
+        schedulePersist()
     }
 
     open func save(_ items: Set<T>) {
         loadIfNeeded()
-        items.forEach {
-            loadedCollection.upsert($0)
-            index[$0.id] = $0
+        mutateLoaded { collection, index in
+            items.forEach {
+                collection.upsert($0)
+                index[$0.id] = $0
+            }
         }
-        persist()
+        schedulePersist()
     }
 
     open func delete(_ item: T) {
         loadIfNeeded()
-        loadedCollection.remove(item)
-        index.removeValue(forKey: item.id)
-        persist()
+        mutateLoaded { collection, index in
+            collection.remove(item)
+            index.removeValue(forKey: item.id)
+        }
+        schedulePersist()
     }
 
     open func delete(_ items: Set<T>) {
         loadIfNeeded()
-        items.forEach {
-            loadedCollection.remove($0)
-            index.removeValue(forKey: $0.id)
+        mutateLoaded { collection, index in
+            items.forEach {
+                collection.remove($0)
+                index.removeValue(forKey: $0.id)
+            }
         }
-        persist()
+        schedulePersist()
     }
 
-    /// Replaces the entire collection with `items` (a full swap, not a merge), then persists once.
     open func replace(_ items: Set<T>) {
-        loadedCollection = items
-        rebuildIndex()
-        persist()
+        stateLock.lock()
+        if _collection == nil {
+            _collection = items
+            loadError = nil
+            index = Dictionary(uniqueKeysWithValues: items.map { ($0.id, $0) })
+            stateLock.unlock()
+        } else {
+            stateLock.unlock()
+            loadedCollection = items
+            rebuildIndex()
+        }
+        schedulePersist(allowDespiteLoadFailure: true)
     }
 
-    /// Passes a mutable copy of the current collection to `changes` for freeform add/remove/mutate,
-    /// assigns the result back, then persists once — regardless of how many items `changes` touches.
     open func batch(_ changes: (inout Set<T>) -> Void) {
         loadIfNeeded()
-        var updated = loadedCollection
+        stateLock.lock()
+        var updated = _collection!
+        stateLock.unlock()
         changes(&updated)
         loadedCollection = updated
         rebuildIndex()
-        persist()
+        schedulePersist()
     }
 
-    // MARK: - File management
+    /// Writes any pending coalesced snapshot immediately.
+    public func flush() {
+        coalesceWorkItem?.cancel()
+        coalesceWorkItem = nil
+        stateLock.lock()
+        let hasLoadedCollection = _collection != nil
+        stateLock.unlock()
+        guard hasLoadedCollection else { return }
+        performPersist(allowDespiteLoadFailure: false)
+    }
+
+  // MARK: - File management
+
+    public func backupFile(suffix: String = "bak") throws -> URL? {
+        try persistence.createBackup(suffix: suffix)
+    }
+
+    open func setExactlyOne(_ item: T?) {
+        batch { items in
+            items = item.map { Set([$0]) } ?? []
+        }
+    }
+
+    open func setDefaultItem(_ item: T) {
+        batch { items in
+            items.remove(item)
+            items.insert(item)
+        }
+    }
 
     public func removeFile() throws {
         try persistence.remove()
     }
 
     public func reload() {
+        stateLock.lock()
         let (collection, error) = Self.load(persistence: persistence)
         _collection = collection
         loadError = error
+        stateLock.unlock()
         rebuildIndex()
     }
 
-    /// Drops the in-memory collection and index back to an un-loaded state. The next access to
-    /// `collection`, `fetchAll()`, `fetch(id:)`, `count`, or any write method re-triggers a load
-    /// from disk. Complements `reload()`, which re-reads eagerly; `unload()` defers the re-read.
     public func unload() {
+        stateLock.lock()
         _collection = nil
         index = [:]
         loadError = nil
+        stateLock.unlock()
     }
 
-    // MARK: - Change hook
-
-    /// Called once after every successful `save`/`delete`. Override to react to changes —
-    /// `PublishedService` mirrors `collection` into `@Published published` here.
     open func collectionDidChange() {}
 
-    // MARK: - Internal
-
-    /// Mutable access to the loaded collection. Callers must call `loadIfNeeded()` first
-    /// (or be in a path, like `replace`, that intentionally overwrites without reading).
     private var loadedCollection: Set<T> {
-        get { _collection! } // every get path calls `loadIfNeeded()` first, or uses the setter (e.g. `replace`)
+        get { _collection! }
         set { _collection = newValue }
     }
 
-    private func loadIfNeeded() {
-        guard _collection == nil else { return }
-        let (collection, error) = Self.load(persistence: persistence)
+    private func mutateLoaded(_ body: (inout Set<T>, inout [String: T]) -> Void) {
+        stateLock.lock()
+        var collection = _collection!
+        var idx = index
+        body(&collection, &idx)
         _collection = collection
-        loadError = error
-        rebuildIndex()
+        index = idx
+        stateLock.unlock()
+    }
+
+    private func lockedLoadState() -> CollectionLoadState {
+        stateLock.lock()
+        defer { stateLock.unlock() }
+        guard let collection = _collection else { return .notLoaded }
+        if loadError != nil { return .failed }
+        return collection.isEmpty ? .empty : .loaded(count: collection.count)
+    }
+
+    private func loadIfNeeded() {
+        stateLock.lock()
+        guard _collection == nil else {
+            stateLock.unlock()
+            return
+        }
+        stateLock.unlock()
+        let (collection, error) = Self.load(persistence: persistence)
+        stateLock.lock()
+        if _collection == nil {
+            _collection = collection
+            loadError = error
+            index = Dictionary(uniqueKeysWithValues: collection.map { ($0.id, $0) })
+        }
+        stateLock.unlock()
     }
 
     private func rebuildIndex() {
+        stateLock.lock()
         index = Dictionary(uniqueKeysWithValues: _collection!.map { ($0.id, $0) })
+        stateLock.unlock()
+    }
+
+    private func schedulePersist(allowDespiteLoadFailure: Bool = false) {
+        let interval = configuration.persistCoalesceInterval
+        guard let interval, interval > 0 else {
+            performPersist(allowDespiteLoadFailure: allowDespiteLoadFailure)
+            return
+        }
+        coalesceWorkItem?.cancel()
+        let work = DispatchWorkItem { [weak self] in
+            self?.performPersist(allowDespiteLoadFailure: allowDespiteLoadFailure)
+        }
+        coalesceWorkItem = work
+        persistQueue.asyncAfter(deadline: .now() + interval, execute: work)
     }
 
     func persist() {
+        schedulePersist()
+    }
+
+    private func performPersist(allowDespiteLoadFailure: Bool) {
+        stateLock.lock()
+        let blocked = loadError != nil && !allowDespiteLoadFailure
+        let snapshot = _collection ?? []
+        stateLock.unlock()
+
+        guard !blocked else {
+            lastError = ServiceError.persistBlockedByLoadFailure
+            StorageLog.warning("Skipping persist because the backing file failed to load; on-disk data preserved", category: Self.logCategory)
+            collectionDidChange()
+            return
+        }
+
         do {
-            try persistence.write(Array(_collection ?? []))
+            try persistence.write(Array(snapshot))
             lastError = nil
         } catch {
             lastError = error
-            Self.logger.warning("SnappyStorage persist failed: \(error.localizedDescription)")
+            StorageLog.warning("SnappyStorage persist failed: \(error.localizedDescription)", category: Self.logCategory)
         }
         collectionDidChange()
+    }
+
+    public func persistThrowing() throws {
+        flush()
+        if let lastError { throw lastError }
     }
 
     private static func load(persistence: Persistence) -> (Set<T>, Error?) {
@@ -182,7 +304,7 @@ open class Service<T: Storable> {
         } catch StorageError.fileDoesNotExist {
             return ([], nil)
         } catch {
-            logger.warning("SnappyStorage failed to load collection, starting empty: \(error.localizedDescription)")
+            StorageLog.warning("SnappyStorage failed to load collection, starting empty: \(error.localizedDescription)", category: "\(T.self)")
             return ([], error)
         }
     }

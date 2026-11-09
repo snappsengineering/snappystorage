@@ -51,4 +51,9 @@ struct Persistence {
     func remove() throws {
         try storage.remove()
     }
+
+    @discardableResult
+    func createBackup(suffix: String = "bak") throws -> URL? {
+        try storage.createBackup(suffix: suffix)
+    }
 }

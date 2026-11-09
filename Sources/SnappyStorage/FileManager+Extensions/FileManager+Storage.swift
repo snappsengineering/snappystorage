@@ -40,7 +40,11 @@ extension Data {
     func writeAtomic(to url: URL) throws {
         try FileManager.default.ensureDirectory(at: url)
         do {
+            #if os(iOS)
+            try write(to: url, options: [.atomic, .completeFileProtectionUntilFirstUserAuthentication])
+            #else
             try write(to: url, options: .atomic)
+            #endif
         } catch {
             throw StorageError.ioError(error)
         }

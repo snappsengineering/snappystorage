@@ -1,8 +1,22 @@
 # Changelog
 
-## Unreleased
+## 2.1.0
 
-_Nothing yet._
+### Added
+
+- `CollectionLoadState` and `Service.loadState` / `await service.load()` / `preload()` for background warm-up.
+- `ServiceConfiguration.persistCoalesceInterval` and `flush()` for coalesced disk writes.
+- Persist is blocked when the backing file failed to load (`ServiceError.persistBlockedByLoadFailure`, `lastError` on `ActorService`).
+- `Service.backupFile()`, `SingleValueService.backupFile()`, and `SingleValueLoadState`.
+- `setExactlyOne(_:)` / `setDefaultItem(_:)` helpers on `Service` and `ActorService`.
+- `Encryption.migrateKeyStringToKeychain(_:store:)` (opt-in, Security platforms).
+- iOS writes use `completeFileProtectionUntilFirstUserAuthentication`.
+- Golden-file and load-state tests; Linux builds via `swift-crypto`.
+
+### Changed
+
+- `ActorService.persist` logs failures and sets `lastError` instead of swallowing errors with `try?`.
+- `Service.init` accepts optional `ServiceConfiguration` (default: immediate persist).
 
 ## 2.0.0
 
