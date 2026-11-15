@@ -11,14 +11,6 @@ final class DestinationTests: XCTestCase {
         XCTAssertEqual(url.path, "/tmp/snappystorage-tests/Note.json")
     }
 
-    // MARK: - Deprecated alias
-
-    @available(*, deprecated, message: "intentionally exercises the deprecated .cloud alias")
-    func testCloudAliasResolvesToICloud() {
-        let aliased: Destination = .cloud
-        XCTAssertEqual(aliased, .iCloud)
-    }
-
     // MARK: - Local
 
     func testLocalResolvesUnderDirectory() throws {
@@ -26,6 +18,18 @@ final class DestinationTests: XCTestCase {
         let url = try Destination.local(.cachesDirectory).url(for: file)
         XCTAssertTrue(url.path.contains("Caches"))
         XCTAssertTrue(url.lastPathComponent == "Note.json")
+    }
+
+    // MARK: - iCloud
+
+    func testICloudThrowsWhenContainerUnavailable() {
+        // Exercises `Destination.iCloud` → `ubiquityDocumentsURL()` when no ubiquity container exists.
+        let file = File(name: "Note", fileExtension: "json")
+        XCTAssertThrowsError(try Destination.iCloud.url(for: file)) { error in
+            guard case DestinationError.urlNotFound = error else {
+                return XCTFail("Expected urlNotFound, got \(error)")
+            }
+        }
     }
 }
 

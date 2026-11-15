@@ -1,15 +1,12 @@
+#if canImport(Security)
 import Foundation
 
 public enum KeychainError: LocalizedError {
-
-    // MARK: - Cases
 
     case saveFailed(OSStatus)
     case loadFailed(OSStatus)
     case deleteFailed(OSStatus)
     case invalidKeyData
-
-    // MARK: - LocalizedError
 
     public var errorDescription: String? {
         switch self {
@@ -20,3 +17,4 @@ public enum KeychainError: LocalizedError {
         }
     }
 }
+#endif

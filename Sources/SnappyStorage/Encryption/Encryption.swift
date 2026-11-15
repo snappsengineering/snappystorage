@@ -1,5 +1,9 @@
 import Foundation
+#if canImport(CryptoKit)
 import CryptoKit
+#elseif canImport(Crypto)
+@preconcurrency import Crypto
+#endif
 
 public struct Encryption: Sendable {
 
@@ -18,26 +22,28 @@ public struct Encryption: Sendable {
         self.key = SymmetricKey(data: hash)
     }
 
+    #if canImport(Security)
     /// Loads an existing key from the keychain or creates and stores a new one.
     public init(keychain store: KeychainKeyStore) throws {
         self.key = try store.loadOrCreate()
     }
+    #endif
 
     // MARK: - Public
+
+    public var symmetricKey: SymmetricKey { key }
 
     public static func generateKey() -> SymmetricKey {
         SymmetricKey(size: .bits256)
     }
 
     public func encrypt(_ data: Data) throws -> Data {
-        let sealed: AES.GCM.SealedBox
         do {
-            sealed = try AES.GCM.seal(data, using: key)
+            // AES.GCM.seal without an explicit nonce always uses the standard 12-byte nonce, so combined is non-nil.
+            return try AES.GCM.seal(data, using: key).combined!
         } catch {
             throw EncryptionError.encryptionFailed(error)
         }
-        guard let combined = sealed.combined else { throw EncryptionError.invalidData }
-        return combined
     }
 
     public func decrypt(_ data: Data) throws -> Data {

@@ -13,15 +13,27 @@ let package = Package(
     products: [
         .library(name: "SnappyStorage", targets: ["SnappyStorage"]),
     ],
+    dependencies: [
+        .package(url: "https://github.com/apple/swift-crypto.git", from: "3.10.0"),
+    ],
     targets: [
         .target(
             name: "SnappyStorage",
-            path: "Sources/SnappyStorage"
+            dependencies: [
+                .product(name: "Crypto", package: "swift-crypto", condition: .when(platforms: [.linux, .android, .windows, .wasi])),
+            ],
+            path: "Sources/SnappyStorage",
+            swiftSettings: [
+                .swiftLanguageMode(.v5),
+            ]
         ),
         .testTarget(
             name: "SnappyStorageTests",
             dependencies: ["SnappyStorage"],
-            path: "Tests/SnappyStorageTests"
+            path: "Tests/SnappyStorageTests",
+            swiftSettings: [
+                .swiftLanguageMode(.v5),
+            ]
         ),
     ]
 )

@@ -99,4 +99,55 @@ final class StorageTests: XCTestCase {
         try persistence.remove()
         XCTAssertThrowsError(try persistence.read([StoredObject].self))
     }
+
+    // MARK: - Randomized round-trips (fuzz-lite)
+
+    /// Random content per run rather than one fixed fixture, to catch encoding/encryption
+    /// edge cases (empty strings, unicode, extreme ints) that hand-picked values could miss.
+    private func randomStoredObjects(count: Int) -> [StoredObject] {
+        let unicodePool = ["", "plain", "emoji-😀🚀", "quote-\"escaped\"", "newline-\nvalue", "unicode-日本語", "null-byte-\0-ish"]
+        return (0..<count).map { _ in
+            StoredObject(
+                name: unicodePool.randomElement()!,
+                value: Int.random(in: Int.min...Int.max)
+            )
+        }
+    }
+
+    func testPersistenceRoundTripWithRandomizedContentUnencrypted() throws {
+        for _ in 0..<10 {
+            let persistence = makePersistence(fileName: "fuzz-plain-\(UUID().uuidString)")
+            let originals = randomStoredObjects(count: 5)
+            try persistence.write(originals)
+            let loaded = try persistence.read([StoredObject].self)
+            XCTAssertEqual(Set(loaded.map(\.id)), Set(originals.map(\.id)))
+            for original in originals {
+                let match = loaded.first { $0.id == original.id }
+                XCTAssertEqual(match?.name, original.name)
+                XCTAssertEqual(match?.value, original.value)
+            }
+        }
+    }
+
+    func testPersistenceRoundTripWithRandomizedContentEncrypted() throws {
+        for _ in 0..<10 {
+            let enc = Encryption(key: Encryption.generateKey())
+            let persistence = makePersistence(fileName: "fuzz-enc-\(UUID().uuidString)", encryption: enc)
+            let originals = randomStoredObjects(count: 5)
+            try persistence.write(originals)
+            let loaded = try persistence.read([StoredObject].self)
+            XCTAssertEqual(Set(loaded.map(\.id)), Set(originals.map(\.id)))
+            for original in originals {
+                let match = loaded.first { $0.id == original.id }
+                XCTAssertEqual(match?.name, original.name)
+                XCTAssertEqual(match?.value, original.value)
+            }
+        }
+    }
+
+    func testPersistenceRoundTripWithEmptyCollection() throws {
+        let persistence = makePersistence(fileName: "fuzz-empty")
+        try persistence.write([StoredObject]())
+        XCTAssertEqual(try persistence.read([StoredObject].self).count, 0)
+    }
 }
